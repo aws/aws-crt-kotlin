@@ -5,10 +5,11 @@
 
 package aws.sdk.kotlin.crt.util
 
+import aws.sdk.kotlin.crt.CrtTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class DigestTest {
+class DigestTest : CrtTest() {
     @Test
     fun testSha256() {
         val buffer = "I don't know half of you half as well as I should like; and I like less than half of you half as well as you deserve.".encodeToByteArray()

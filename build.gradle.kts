@@ -2,8 +2,8 @@
  * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
-import aws.sdk.kotlin.gradle.dsl.configureLinting
 import aws.sdk.kotlin.gradle.dsl.configureJReleaser
+import aws.sdk.kotlin.gradle.dsl.configureLinting
 import aws.sdk.kotlin.gradle.util.typedProp
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
@@ -11,6 +11,12 @@ buildscript {
     repositories {
         mavenCentral()
         mavenLocal()
+    }
+    // NOTE: buildscript classpath for the root project is the parent classloader for all subprojects.
+    // Anything included in the root buildscript classpath is added to the classpath for all projects!
+    dependencies {
+        // Add our custom gradle build logic to buildscript classpath
+        classpath(libs.aws.kotlin.repo.tools.build.support)
     }
 }
 
@@ -66,6 +72,7 @@ configureJReleaser()
 // Code Style
 val lintPaths = listOf(
     "**/*.{kt,kts}",
+    "!crt/**",
 )
 
 configureLinting(lintPaths)

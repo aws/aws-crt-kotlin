@@ -1,0 +1,9 @@
+{
+    "id": "2461e178-b595-4fa3-9cf1-4bc5d7672d01",
+    "type": "feature",
+    "description": "⚠️ **IMPORTANT**: Add support for Kotlin/Native",
+    "issues": [
+        "https://github.com/awslabs/aws-sdk-kotlin/issues/229"
+    ],
+    "requiresMinorVersionBump": true
+}

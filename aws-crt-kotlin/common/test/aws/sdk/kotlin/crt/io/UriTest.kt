@@ -6,10 +6,7 @@
 package aws.sdk.kotlin.crt.io
 
 import aws.sdk.kotlin.crt.CrtTest
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFails
-import kotlin.test.assertNull
+import kotlin.test.*
 
 class UriTest : CrtTest() {
     @Test

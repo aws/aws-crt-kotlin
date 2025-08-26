@@ -13,3 +13,4 @@ build/
 local.properties
 *.klib
 .kotlin/
+dockcross-*

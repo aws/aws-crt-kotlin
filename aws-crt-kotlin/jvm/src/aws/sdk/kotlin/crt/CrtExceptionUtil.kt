@@ -6,10 +6,7 @@
 package aws.sdk.kotlin.crt
 import software.amazon.awssdk.crt.CrtRuntimeException as CrtRuntimeExceptionJni
 
-private class CrtJniExceptionWrapper(wrapped: CrtRuntimeExceptionJni) : CrtRuntimeException(wrapped.message) {
-    override val errorCode: Int = wrapped.errorCode
-    override val cause: Throwable? = wrapped
-}
+private class CrtJniExceptionWrapper(wrapped: CrtRuntimeExceptionJni) : CrtRuntimeException(wrapped.message, wrapped, wrapped.errorCode)
 
 /**
  * Wrap any CRT JNI call exception that happens in [block] into an instance of the kotlin equivalent

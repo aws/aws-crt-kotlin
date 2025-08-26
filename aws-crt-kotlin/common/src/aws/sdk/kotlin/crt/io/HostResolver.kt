@@ -14,6 +14,8 @@ public expect class HostResolver(elg: EventLoopGroup, maxEntries: Int) :
     Closeable,
     AsyncShutdown {
     public constructor(elg: EventLoopGroup)
+    public constructor()
+
     override fun close()
     override suspend fun waitForShutdown()
 }

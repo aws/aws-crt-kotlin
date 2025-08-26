@@ -1,0 +1,23 @@
+name: Lint
+
+on:
+  push:
+    branches:
+      - '**'
+      - '!main'
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  PACKAGE_NAME: aws-crt-kotlin
+
+jobs:
+  ktlint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+      - name: Lint ${{ env.PACKAGE_NAME }}
+        run: |
+          ./gradlew ktlint

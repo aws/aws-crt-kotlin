@@ -5,7 +5,6 @@
 
 package aws.sdk.kotlin.crt.http
 
-import aws.sdk.kotlin.crt.CRT
 import aws.sdk.kotlin.crt.CrtRuntimeException
 
-public class HttpException(override val errorCode: Int) : CrtRuntimeException(CRT.errorString(errorCode))
+public class HttpException(ec: Int) : CrtRuntimeException(ec = ec)

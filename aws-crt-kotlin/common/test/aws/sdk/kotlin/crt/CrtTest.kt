@@ -9,7 +9,7 @@ open class CrtTest {
     init {
         CRT.initRuntime {
             logDestination = LogDestination.Stdout
-            logLovel = LogLevel.Debug
+            logLevel = LogLevel.Debug
         }
     }
 }

@@ -54,7 +54,7 @@ public class Config {
     /**
      * The level to log internals at
      */
-    public var logLovel: LogLevel = LogLevel.None
+    public var logLevel: LogLevel = LogLevel.None
 
     /**
      * The destination to log to

@@ -17,6 +17,8 @@ pluginManagement {
     }
 }
 
+includeBuild("./build-support")
+
 rootProject.name = "aws-crt-kotlin-parent"
 
 include(":aws-crt-kotlin")

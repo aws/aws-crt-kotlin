@@ -5,6 +5,7 @@
 
 package aws.sdk.kotlin.crt.http
 
+import kotlinx.coroutines.future.await
 import software.amazon.awssdk.crt.http.HttpStream as HttpStreamJni
 
 /**
@@ -20,7 +21,7 @@ internal class HttpStreamJVM(private val jniStream: HttpStreamJni) : HttpStream 
 
     override fun close() = jniStream.close()
 
-    override fun writeChunk(chunkData: ByteArray, isFinalChunk: Boolean) {
-        jniStream.writeChunk(chunkData, isFinalChunk)
+    override suspend fun writeChunk(chunkData: ByteArray, isFinalChunk: Boolean) {
+        jniStream.writeChunk(chunkData, isFinalChunk).await()
     }
 }
