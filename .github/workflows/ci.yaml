@@ -88,6 +88,11 @@ jobs:
           submodules: recursive
       - name: Setup build environment
         uses: ./.github/actions/setup-build
+      - name: Debug build environment
+        shell: bash
+        run: |
+          ls .
+          ls aws-crt-kotlin
       - name: Configure Docker Images
         run: |
           ./docker-images/build-images.sh linux-x64 linux-arm64
