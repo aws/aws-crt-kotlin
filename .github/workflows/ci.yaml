@@ -91,8 +91,13 @@ jobs:
       - name: Debug build environment
         shell: bash
         run: |
+          echo "ls ."
           ls .
-          ls aws-crt-kotlin
+          echo "ls ./crt"
+          ls ./crt
+          echo "ls ./crt/aws-c-common"
+          ls ./crt/aws-c-common
+
       - name: Configure Docker Images
         run: |
           ./docker-images/build-images.sh linux-x64 linux-arm64
