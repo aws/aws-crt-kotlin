@@ -61,7 +61,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: true
+          submodules: recursive
       - name: Setup build environment
         uses: ./.github/actions/setup-build
       - name: Build and Test ${{ env.PACKAGE_NAME }}
@@ -85,7 +85,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: true
+          submodules: recursive
       - name: Setup build environment
         uses: ./.github/actions/setup-build
       - name: Configure Docker Images
@@ -147,7 +147,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: true
+          submodules: recursive
       - name: Set up MSYS2
         uses: msys2/setup-msys2@v2
         with:
