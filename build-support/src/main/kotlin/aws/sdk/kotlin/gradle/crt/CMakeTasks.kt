@@ -259,7 +259,7 @@ private fun runCmake(project: Project, target: KotlinNativeTarget, cmakeArgs: Li
         project.logger.info("$exeName ${exeArgs.joinToString(separator = " ")}")
         executable(exeName)
         args(exeArgs)
-    }
+    }.result.get() // providers.exec is lazy, so fetch the result here to ensure the command executes
 }
 
 private fun validateCrossCompileScriptsAvailable(project: Project, script: String) {
