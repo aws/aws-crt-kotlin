@@ -61,7 +61,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: recursive
+          submodules: true
       - name: Setup build environment
         uses: ./.github/actions/setup-build
       - name: Build and Test ${{ env.PACKAGE_NAME }}
@@ -85,19 +85,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: recursive
+          submodules: true
       - name: Setup build environment
         uses: ./.github/actions/setup-build
-      - name: Debug build environment
-        shell: bash
-        run: |
-          echo "ls ."
-          ls .
-          echo "ls ./crt"
-          ls ./crt
-          echo "ls ./crt/aws-c-common"
-          ls ./crt/aws-c-common
-
       - name: Configure Docker Images
         run: |
           ./docker-images/build-images.sh linux-x64 linux-arm64
@@ -157,7 +147,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: recursive
+          submodules: true
       - name: Set up MSYS2
         uses: msys2/setup-msys2@v2
         with:
