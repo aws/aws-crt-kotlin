@@ -1,7 +1,8 @@
 # TODO: Delete this action when we migrate off JReleaser
 
 name: JReleaser check
-on:
+permissions: # No permissions
+ on:
   pull_request:
 
 jobs:
