@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.11.0] - 09/03/2025
+
+### Features
+* [#229](https://github.com/awslabs/aws-sdk-kotlin/issues/229) ⚠️ **IMPORTANT**: Add support for Kotlin/Native
+
+### Miscellaneous
+* Upgrade to Gradle 9.0.0
+
 ## [0.10.3] - 08/12/2025
 
 ## [0.10.2] - 07/24/2025
