@@ -71,7 +71,7 @@ of your request may disagree and ask that you add one anyway.
   "type": "feature",
   "description": "Add binding for CRT URL parsing",
   "issues": [
-    "awslabs/aws-crt-kotlin#12345"
+    "aws/aws-crt-kotlin#12345"
   ]
 }
 ```
