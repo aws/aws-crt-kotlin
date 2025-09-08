@@ -10,4 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: JReleaser check
-        uses: awslabs/aws-kotlin-repo-tools/.github/actions/jreleaser@main
+        uses: awslabs/aws-kotlin-repo-tools/.github/actions/jreleaser@feat-jreleaser-signing
+        env:
+          JRELEASER_GPG_PASSPHRASE: "foo"
+          JRELEASER_GPG_SECRET_KEY: ${{ secrets.DUMMY_GPG_PRIVATE_KEY }}
+          JRELEASER_GPG_PUBLIC_KEY: ${{ secrets.DUMMY_GPG_PUBLIC_KEY }}
