@@ -111,6 +111,20 @@ configureIosSimulatorTasks()
 // Publishing
 configurePublishing("aws-crt-kotlin")
 
+val linuxTargets: List<String> = listOf(
+    "linuxX64",
+    "linuxArm64",
+)
+
+// create a summary task that compiles all cross platform test binaries
+tasks.register("linuxTestBinaries") {
+    linuxTargets.map {
+        tasks.named("${it}TestBinaries")
+    }.forEach { testTask ->
+        dependsOn(testTask)
+    }
+}
+
 // run tests on specific JVM version
 val testJavaVersion = typedProp<String>("test.java.version")?.let {
     JavaLanguageVersion.of(it)
