@@ -10,6 +10,8 @@ import aws.sdk.kotlin.gradle.kmp.configureIosSimulatorTasks
 import aws.sdk.kotlin.gradle.kmp.configureKmpTargets
 import aws.sdk.kotlin.gradle.util.typedProp
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
+import org.jetbrains.kotlin.konan.target.Family
+import org.jetbrains.kotlin.konan.target.HostManager
 
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
@@ -70,8 +72,7 @@ kotlin {
     // see: https://github.com/JetBrains/kotlin-native/issues/2423#issuecomment-466300153
     targets.withType<KotlinNativeTarget> {
         val knTarget = this
-        logger.info("configuring Kotlin/Native target $knTarget: ${knTarget.name}")
-        val cmakeInstallTask = configureCrtCMakeBuild(knTarget, CMakeBuildType.Release)
+
         val targetInstallDir = project.cmakeInstallDir(knTarget)
         val headerDir = targetInstallDir.resolve("include")
         val libDir = targetInstallDir.resolve("lib")
@@ -85,11 +86,20 @@ kotlin {
                 compilerOpts("-L${libDir.absolutePath}")
                 extraOpts("-libraryPath", libDir.absolutePath)
             }
+            val interopTaskName = interopSettings.interopProcessingTaskName
 
-            // cinterop tasks processes header files which requires the corresponding CMake build/install to run
-            val cinteropTask = tasks.named(interopSettings.interopProcessingTaskName)
-            cinteropTask.configure {
-                dependsOn(cmakeInstallTask)
+            if (!knTarget.isBuildableOnHost) {
+                logger.warn("Kotlin/Native target $knTarget is enabled but not buildable on host ${HostManager.host}, disabling cinterop")
+                tasks.named(interopTaskName).configure {
+                    onlyIf { false }
+                }
+            } else {
+                logger.info("Configuring Kotlin/Native target $knTarget: ${knTarget.name}")
+                val cmakeInstallTask = configureCrtCMakeBuild(knTarget, CMakeBuildType.Release)
+                // cinterop tasks processes header files which requires the corresponding CMake build/install to run
+                tasks.named(interopTaskName).configure {
+                    dependsOn(cmakeInstallTask)
+                }
             }
         }
     }
@@ -143,3 +153,18 @@ tasks.withType<AbstractTestTask> {
         exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
     }
 }
+
+// Returns whether this target can be built on the current host
+private val KotlinNativeTarget.isBuildableOnHost: Boolean
+    get() = run {
+        val family = konanTarget.family
+        return if (HostManager.hostIsMac) {
+            family in setOf(Family.OSX, Family.IOS, Family.TVOS, Family.WATCHOS)
+        } else if (HostManager.hostIsLinux) {
+            family == Family.LINUX
+        } else if (HostManager.hostIsMingw) {
+            family == Family.MINGW
+        } else {
+            throw Exception("Unsupported host: ${HostManager.host}")
+        }
+    }
