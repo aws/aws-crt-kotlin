@@ -1,7 +1,7 @@
 [versions]
 kotlin-version = "2.2.0"
 
-aws-kotlin-repo-tools-version = "0.4.49"
+aws-kotlin-repo-tools-version = "0.0.1"
 
 # libs
 crt-java-version = "0.38.1"
@@ -9,8 +9,6 @@ coroutines-version = "1.10.2"
 binary-compatibility-validator-version = "0.18.0"
 
 # testing
-junit-version = "5.13.2"
-kotest-version = "5.9.1"
 mock-server-version = "5.15.0"
 
 [libraries]
@@ -18,15 +16,11 @@ aws-kotlin-repo-tools-build-support = { module="aws.sdk.kotlin.gradle:build-supp
 crt-java = { module = "software.amazon.awssdk.crt:aws-crt", version.ref = "crt-java-version" }
 
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin-version"}
-kotlin-test-junit5 = { module = "org.jetbrains.kotlin:kotlin-test-junit5", version.ref = "kotlin-version" }
 
 kotlinx-coroutines-debug = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-debug", version.ref = "coroutines-version" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines-version" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines-version" }
 kotlinx-coroutines-jdk8 = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-jdk8", version.ref = "coroutines-version" }
-
-junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit-version" }
-junit-jupiter-params = { module = "org.junit.jupiter:junit-jupiter-params", version.ref = "junit-version" }
 
 mockserver-netty = { module = "org.mock-server:mockserver-netty", version.ref = "mock-server-version" }
 
