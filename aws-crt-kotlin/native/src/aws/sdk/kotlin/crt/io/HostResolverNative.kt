@@ -161,14 +161,12 @@ private fun awsOnHostResolveFn(
 
 // Minimal wrapper of aws_host_address
 // https://github.com/awslabs/aws-c-io/blob/db7a1bddc9a29eca18734d0af189c3924775dcf1/include/aws/io/host_resolver.h#L31
-@InternalApi
 public data class CrtHostAddress(
     val host: String,
     val address: String,
     val addressType: AddressType,
 )
 
-@InternalApi
 public enum class AddressType {
     IpV4,
     IpV6,
