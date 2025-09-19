@@ -122,7 +122,7 @@ kotlin {
                     Files.writeString(
                         defPath.get().asFile.toPath(),
                         """
-                            package = aws.smithy.kotlin.native.winver
+                            package = aws.sdk.kotlin.crt.winver
                             headers = windows.h
                             compilerOpts = \
                                 -DUNICODE \

@@ -4,6 +4,8 @@
  */
 package aws.sdk.kotlin.crt.util
 
+import aws.sdk.kotlin.crt.winver.*
+
 // The functions below are adapted from C++ SDK:
 // https://github.com/aws/aws-sdk-cpp/blob/0e6085bf0dd9a1cb1f27d101c4cf2db6ade6f307/src/aws-cpp-sdk-core/source/platform/windows/OSVersionInfo.cpp#L49-L106
 
