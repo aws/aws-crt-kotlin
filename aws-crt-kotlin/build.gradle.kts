@@ -6,12 +6,15 @@ import aws.sdk.kotlin.gradle.crt.CMakeBuildType
 import aws.sdk.kotlin.gradle.crt.cmakeInstallDir
 import aws.sdk.kotlin.gradle.crt.configureCrtCMakeBuild
 import aws.sdk.kotlin.gradle.dsl.configurePublishing
+import aws.sdk.kotlin.gradle.kmp.NATIVE_ENABLED
 import aws.sdk.kotlin.gradle.kmp.configureIosSimulatorTasks
 import aws.sdk.kotlin.gradle.kmp.configureKmpTargets
 import aws.sdk.kotlin.gradle.util.typedProp
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.konan.target.Family
 import org.jetbrains.kotlin.konan.target.HostManager
+import java.nio.file.Files
+import java.nio.file.Paths
 
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
@@ -103,6 +106,58 @@ kotlin {
             }
         }
     }
+
+    if (NATIVE_ENABLED && HostManager.hostIsMingw) {
+        mingwX64 {
+            val mingwHome = findMingwHome()
+            val defPath = layout.buildDirectory.file("cinterop/winver.def")
+
+            // Dynamically construct def file because of dynamic mingw paths
+            val defFileTask by tasks.registering {
+                outputs.file(defPath)
+
+                val mingwLibs = Paths.get(mingwHome, "lib").toString().replace("\\", "\\\\") // Windows path shenanigans
+
+                doLast {
+                    Files.writeString(
+                        defPath.get().asFile.toPath(),
+                        """
+                            package = aws.sdk.kotlin.crt.winver
+                            headers = windows.h
+                            compilerOpts = \
+                                -DUNICODE \
+                                -DWINVER=0x0601 \
+                                -D_WIN32_WINNT=0x0601 \
+                                -DWINAPI_FAMILY=3 \
+                                -DOEMRESOURCE \
+                                -Wno-incompatible-pointer-types \
+                                -Wno-deprecated-declarations
+                            libraryPaths = $mingwLibs
+                            staticLibraries = libversion.a
+                        """.trimIndent(),
+                    )
+                }
+            }
+            compilations["main"].cinterops {
+                create("winver") {
+                    val mingwIncludes = Paths.get(mingwHome, "include").toString()
+                    includeDirs(mingwIncludes)
+                    definitionFile.set(defPath)
+
+                    // Ensure that the def file is written first
+                    tasks[interopProcessingTaskName].dependsOn(defFileTask)
+                }
+            }
+
+            // TODO clean up
+            val compilerArgs = listOf(
+                "-Xverbose-phases=linker", // Enable verbose linking phase from the compiler
+                "-linker-option",
+                "-v",
+            )
+            compilerOptions.freeCompilerArgs.addAll(compilerArgs)
+        }
+    }
 }
 
 configureIosSimulatorTasks()
@@ -168,3 +223,11 @@ private val KotlinNativeTarget.isBuildableOnHost: Boolean
             throw Exception("Unsupported host: ${HostManager.host}")
         }
     }
+
+private fun findMingwHome(): String =
+    System.getenv("MINGW_PREFIX")?.takeUnless { it.isBlank() }
+        ?: typedProp("mingw.prefix")
+        ?: throw IllegalStateException(
+            "Cannot determine MinGW prefix location. Please verify MinGW is installed correctly " +
+                "and that either the `MINGW_PREFIX` environment variable or the `mingw.prefix` Gradle property is set.",
+        )
