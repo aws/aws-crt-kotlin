@@ -5,9 +5,9 @@
 
 package aws.sdk.kotlin.crt.util
 
+import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertNotNull
-import kotlinx.coroutines.test.runTest
 
 class OsVersionTest {
     @Test
