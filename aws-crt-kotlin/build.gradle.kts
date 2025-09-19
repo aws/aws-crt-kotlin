@@ -2,11 +2,11 @@
  * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
-import aws.sdk.kotlin.gradle.kmp.NATIVE_ENABLED
 import aws.sdk.kotlin.gradle.crt.CMakeBuildType
 import aws.sdk.kotlin.gradle.crt.cmakeInstallDir
 import aws.sdk.kotlin.gradle.crt.configureCrtCMakeBuild
 import aws.sdk.kotlin.gradle.dsl.configurePublishing
+import aws.sdk.kotlin.gradle.kmp.NATIVE_ENABLED
 import aws.sdk.kotlin.gradle.kmp.configureIosSimulatorTasks
 import aws.sdk.kotlin.gradle.kmp.configureKmpTargets
 import aws.sdk.kotlin.gradle.util.typedProp
@@ -229,6 +229,5 @@ private fun findMingwHome(): String =
         ?: typedProp("mingw.prefix")
         ?: throw IllegalStateException(
             "Cannot determine MinGW prefix location. Please verify MinGW is installed correctly " +
-                    "and that either the `MINGW_PREFIX` environment variable or the `mingw.prefix` Gradle property is set.",
+                "and that either the `MINGW_PREFIX` environment variable or the `mingw.prefix` Gradle property is set.",
         )
-
