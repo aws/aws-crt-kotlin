@@ -160,6 +160,7 @@ jobs:
       - name: Build and Test ${{ env.PACKAGE_NAME }}
         shell: msys2 {0}
         run: |
+          echo $MINGW_PREFIX
           ./gradlew build -Paws.crt.disableContainerTargets=mingw_x64
       - name: Save Test Reports
         if: failure()
