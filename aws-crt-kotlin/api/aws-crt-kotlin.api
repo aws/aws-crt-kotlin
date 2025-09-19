@@ -41,9 +41,6 @@ public class aws/sdk/kotlin/crt/CrtRuntimeException : java/lang/RuntimeException
 	public fun getMessage ()Ljava/lang/String;
 }
 
-public abstract interface annotation class aws/sdk/kotlin/crt/InternalApi : java/lang/annotation/Annotation {
-}
-
 public final class aws/sdk/kotlin/crt/LogDestination : java/lang/Enum {
 	public static final field File Laws/sdk/kotlin/crt/LogDestination;
 	public static final field None Laws/sdk/kotlin/crt/LogDestination;
