@@ -8,9 +8,13 @@ import aws.sdk.kotlin.crt.winver.*
 import kotlinx.cinterop.*
 import platform.posix.memcpy
 
+// The following code is used to resolve the OS version on Windows machines.
+// This eventually ends up in aws-sdk-kotlin's User-Agent header.
+// It briefly lived in smithy-kotlin but was removed because it needs a MinGW installation to compile
+// FIXME Can we get the same information without all these API calls?
+
 // The functions below are adapted from C++ SDK:
 // https://github.com/aws/aws-sdk-cpp/blob/0e6085bf0dd9a1cb1f27d101c4cf2db6ade6f307/src/aws-cpp-sdk-core/source/platform/windows/OSVersionInfo.cpp#L49-L106
-
 private val wordHexFormat = HexFormat {
     upperCase = false
     number {
