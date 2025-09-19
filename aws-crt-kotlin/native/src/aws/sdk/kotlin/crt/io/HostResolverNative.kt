@@ -100,7 +100,6 @@ private fun awsOnHostResolveFn(
     hostAddresses: CPointer<aws_array_list>?, // list of `aws_host_address`
     userData: COpaquePointer?,
 ): Unit = memScoped {
-    println("In callback awsOnHostResolveFn")
     if (errCode != AWS_OP_SUCCESS) {
         throw CrtRuntimeException("aws_on_host_resolved_result_fn", ec = errCode)
     }

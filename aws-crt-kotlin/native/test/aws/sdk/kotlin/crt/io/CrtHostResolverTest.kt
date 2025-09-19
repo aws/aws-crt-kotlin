@@ -14,9 +14,6 @@ import kotlin.test.assertTrue
 
 // Copied from smithy-kotlin
 class CrtHostResolverTest {
-    private val ipv4Regex = Regex("""^(\d{1,3}\.){3}\d{1,3}$""")
-    private val ipv6Regex = Regex("""^(([0-9a-fA-F]{1,4}:){1,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|::([0-9a-fA-F]{1,4}:){0,6}[0-9a-fA-F]{1,4})$""")
-
     @Test
     fun testResolveLocalhost() = runTest {
         val hr = HostResolver()
