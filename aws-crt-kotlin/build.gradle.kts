@@ -223,3 +223,12 @@ private val KotlinNativeTarget.isBuildableOnHost: Boolean
             throw Exception("Unsupported host: ${HostManager.host}")
         }
     }
+
+private fun findMingwHome(): String =
+    System.getenv("MINGW_PREFIX")?.takeUnless { it.isBlank() }
+        ?: typedProp("mingw.prefix")
+        ?: throw IllegalStateException(
+            "Cannot determine MinGW prefix location. Please verify MinGW is installed correctly " +
+                    "and that either the `MINGW_PREFIX` environment variable or the `mingw.prefix` Gradle property is set.",
+        )
+
