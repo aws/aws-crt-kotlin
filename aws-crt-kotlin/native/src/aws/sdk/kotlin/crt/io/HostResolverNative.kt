@@ -67,13 +67,13 @@ public actual class HostResolver private constructor(
         val awsHostname = hostname.toAwsString()
         val resultCallback = staticCFunction(::awsOnHostResolveFn)
 
-        val channel: Channel<List<CrtHostAddress>> = Channel(Channel.RENDEZVOUS)
+        val channel: Channel<Result<List<CrtHostAddress>>> = Channel(Channel.RENDEZVOUS)
         val channelStableRef = StableRef.create(channel)
         val userData = channelStableRef.asCPointer()
 
         aws_host_resolver_resolve_host(ptr, awsHostname, resultCallback, aws_host_resolver_init_default_resolution_config(), userData)
 
-        return channel.receive().also {
+        return channel.receive().getOrThrow().also {
             aws_string_destroy(awsHostname)
             channelStableRef.dispose()
         }
@@ -100,49 +100,63 @@ private fun awsOnHostResolveFn(
     hostAddresses: CPointer<aws_array_list>?, // list of `aws_host_address`
     userData: COpaquePointer?,
 ): Unit = memScoped {
-    if (errCode != AWS_OP_SUCCESS) {
-        throw CrtRuntimeException("aws_on_host_resolved_result_fn", ec = errCode)
-    }
     if (userData == null) {
         throw CrtRuntimeException("aws_on_host_resolved_result_fn: userData unexpectedly null")
     }
 
-    val length = aws_array_list_length(hostAddresses)
-    if (length == 0uL) {
-        throw CrtRuntimeException("Failed to resolve host address for ${hostName?.toKString()}")
-    }
+    val stableRef = userData.asStableRef<Channel<Result<List<CrtHostAddress>>>>()
+    val channel = stableRef.get()
 
-    val result = ArrayList<CrtHostAddress>(length.toInt())
-
-    val element = alloc<COpaquePointerVar>()
-    for (i in 0uL until length) {
-        awsAssertOpSuccess(
-            aws_array_list_get_at_ptr(
-                hostAddresses,
-                element.ptr,
-                i,
-            ),
-        ) { "aws_array_list_get_at_ptr failed at index $i" }
-
-        val elemOpaque = element.value ?: throw CrtRuntimeException("aws_host_addresses value at index $i unexpectedly null")
-        val addr = elemOpaque.reinterpret<aws_host_address>().pointed
-
-        val hostStr = addr.host?.toKString() ?: throw CrtRuntimeException("aws_host_addresses `host` at index $i unexpectedly null")
-        val addressStr = addr.address?.toKString() ?: throw CrtRuntimeException("aws_host_addresses `address` at index $i unexpectedly null")
-        val addressType = when (addr.record_type) {
-            aws_address_record_type.AWS_ADDRESS_RECORD_TYPE_A -> AddressType.IpV4
-            aws_address_record_type.AWS_ADDRESS_RECORD_TYPE_AAAA -> AddressType.IpV6
-            else -> throw CrtRuntimeException("received unsupported aws_host_address `aws_address_record_type`: ${addr.record_type}")
+    try {
+        if (errCode != AWS_OP_SUCCESS) {
+            throw CrtRuntimeException("aws_on_host_resolved_result_fn", ec = errCode)
         }
 
-        result += CrtHostAddress(host = hostStr, address = addressStr, addressType)
-    }
+        val length = aws_array_list_length(hostAddresses)
+        if (length == 0uL) {
+            throw CrtRuntimeException("Failed to resolve host address for ${hostName?.toKString()}")
+        }
 
-    // Send results back through the channel
-    val stableRef = userData.asStableRef<Channel<List<CrtHostAddress>>>()
-    val channel = stableRef.get()
-    channel.trySend(result)
-    channel.close()
+        val addressList = ArrayList<CrtHostAddress>(length.toInt())
+
+        val element = alloc<COpaquePointerVar>()
+        for (i in 0uL until length) {
+            awsAssertOpSuccess(
+                aws_array_list_get_at_ptr(
+                    hostAddresses,
+                    element.ptr,
+                    i,
+                ),
+            ) { "aws_array_list_get_at_ptr failed at index $i" }
+
+            val elemOpaque = element.value ?: run {
+                throw CrtRuntimeException("aws_host_addresses value at index $i unexpectedly null")
+            }
+
+            val addr = elemOpaque.reinterpret<aws_host_address>().pointed
+
+            val hostStr = addr.host?.toKString() ?: run {
+                throw CrtRuntimeException("aws_host_addresses `host` at index $i unexpectedly null")
+            }
+            val addressStr = addr.address?.toKString() ?: run {
+                throw CrtRuntimeException("aws_host_addresses `address` at index $i unexpectedly null")
+            }
+
+            val addressType = when (addr.record_type) {
+                aws_address_record_type.AWS_ADDRESS_RECORD_TYPE_A -> AddressType.IpV4
+                aws_address_record_type.AWS_ADDRESS_RECORD_TYPE_AAAA -> AddressType.IpV6
+                else -> throw CrtRuntimeException("received unsupported aws_host_address `aws_address_record_type`: ${addr.record_type}")
+            }
+
+            addressList += CrtHostAddress(host = hostStr, address = addressStr, addressType)
+        }
+
+        channel.trySend(Result.success(addressList))
+    } catch (e: Exception) {
+        channel.trySend(Result.failure(e))
+    } finally {
+        channel.close()
+    }
 }
 
 // Minimal wrapper of aws_host_address
