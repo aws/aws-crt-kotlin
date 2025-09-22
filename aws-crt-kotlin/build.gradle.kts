@@ -142,14 +142,19 @@ kotlin {
                     )
                 }
             }
+
             compilations["main"].cinterops {
                 create("winver") {
+                    println("Creating winver cinterop task")
                     val mingwIncludes = Paths.get(mingwHome, "include").toString()
+                    println("Using MinGW includes at: $mingwIncludes")
+
                     includeDirs(mingwIncludes)
                     definitionFile.set(defPath)
 
                     // Ensure that the def file is written first
                     tasks[interopProcessingTaskName].dependsOn(defFileTask)
+                    println("Done creating winver cinterop task")
                 }
             }
 
@@ -160,6 +165,7 @@ kotlin {
                 "-v",
             )
             compilerOptions.freeCompilerArgs.addAll(compilerArgs)
+            println("Added compiler args: ${compilerArgs.joinToString()}")
         }
     }
 }
