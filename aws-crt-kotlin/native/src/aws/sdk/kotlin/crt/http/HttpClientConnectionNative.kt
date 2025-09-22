@@ -142,8 +142,8 @@ private fun onIncomingBody(
     data: CPointer<aws_byte_cursor>?,
     userdata: COpaquePointer?,
 ): Int {
-    val stableRef = userdata?.asStableRef<HttpStreamContext>()
-    val ctx = stableRef?.get()
+    val stableRef = try { userdata?.asStableRef<HttpStreamContext>() } catch (_: NullPointerException) { return AWS_OP_ERR }
+    val ctx = try { stableRef?.get() } catch (_: NullPointerException) { return AWS_OP_ERR }
     if (ctx == null) return AWS_OP_ERR
     val stream = ctx.stream
     if (stream == null) return AWS_OP_ERR
