@@ -108,15 +108,19 @@ kotlin {
     }
 
     if (NATIVE_ENABLED && HostManager.hostIsMingw) {
+        println("CONFIGURING MINGW64 WinVer!")
         mingwX64 {
             val mingwHome = findMingwHome()
+            println("Found mingwHome at $mingwHome")
             val defPath = layout.buildDirectory.file("cinterop/winver.def")
+            println("Writing winver.def to $defPath")
 
             // Dynamically construct def file because of dynamic mingw paths
             val defFileTask by tasks.registering {
                 outputs.file(defPath)
 
                 val mingwLibs = Paths.get(mingwHome, "lib").toString().replace("\\", "\\\\") // Windows path shenanigans
+                println("Using MinGW libs folder: $mingwLibs")
 
                 doLast {
                     Files.writeString(
