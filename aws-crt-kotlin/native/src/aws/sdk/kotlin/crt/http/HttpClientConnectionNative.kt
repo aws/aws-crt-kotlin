@@ -7,11 +7,7 @@ package aws.sdk.kotlin.crt.http
 import aws.sdk.kotlin.crt.*
 import aws.sdk.kotlin.crt.io.Buffer
 import aws.sdk.kotlin.crt.io.ByteCursorBuffer
-import aws.sdk.kotlin.crt.util.asAwsByteCursor
-import aws.sdk.kotlin.crt.util.initFromCursor
-import aws.sdk.kotlin.crt.util.toKString
-import aws.sdk.kotlin.crt.util.use
-import aws.sdk.kotlin.crt.util.withAwsByteCursor
+import aws.sdk.kotlin.crt.util.*
 import kotlinx.atomicfu.atomic
 import kotlinx.cinterop.*
 import libcrt.*
@@ -146,8 +142,11 @@ private fun onIncomingBody(
     data: CPointer<aws_byte_cursor>?,
     userdata: COpaquePointer?,
 ): Int {
-    val ctx = userdata?.asStableRef<HttpStreamContext>()?.get() ?: return AWS_OP_ERR
-    val stream = ctx.stream ?: return AWS_OP_ERR
+    val stableRef = userdata?.asStableRef<HttpStreamContext>()
+    val ctx = stableRef?.get()
+    if (ctx == null) return AWS_OP_ERR
+    val stream = ctx.stream
+    if (stream == null) return AWS_OP_ERR
 
     try {
         val body = if (data != null) ByteCursorBuffer(data) else Buffer.Empty
