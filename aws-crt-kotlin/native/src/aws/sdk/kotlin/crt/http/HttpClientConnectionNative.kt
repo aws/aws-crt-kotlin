@@ -83,6 +83,8 @@ private class HttpStreamContext(
     val nativeReq: CPointer<cnames.structs.aws_http_message>,
 )
 
+private fun callbackError(): Int = aws_raise_error(AWS_ERROR_HTTP_CALLBACK_FAILURE.toInt())
+
 private fun onResponseHeaders(
     nativeStream: CPointer<cnames.structs.aws_http_stream>?,
     blockType: aws_http_header_block,
@@ -90,33 +92,31 @@ private fun onResponseHeaders(
     numHeaders: size_t,
     userdata: COpaquePointer?,
 ): Int {
-    val ctxStableRef = userdata?.asStableRef<HttpStreamContext>() ?: return aws_raise_error(AWS_ERROR_HTTP_CALLBACK_FAILURE.toInt())
-    ctxStableRef.use {
-        val ctx = it.get()
-        val stream = ctx.stream ?: return AWS_OP_ERR
+    val stableRef = dereferenceUserdata(userdata) ?: return callbackError()
+    val ctx = stableRef.safeGet() ?: return callbackError()
+    val stream = ctx.stream ?: return callbackError()
 
-        val hdrCnt = numHeaders.toInt()
-        val headers: List<HttpHeader>? = if (hdrCnt > 0 && headerArray != null) {
-            val kheaders = mutableListOf<HttpHeader>()
-            for (i in 0 until hdrCnt) {
-                val nativeHdr = headerArray[i]
-                val hdr = HttpHeader(nativeHdr.name.toKString(), nativeHdr.value.toKString())
-                kheaders.add(hdr)
-            }
-            kheaders
-        } else {
-            null
+    val hdrCnt = numHeaders.toInt()
+    val headers: List<HttpHeader>? = if (hdrCnt > 0 && headerArray != null) {
+        val kheaders = mutableListOf<HttpHeader>()
+        for (i in 0 until hdrCnt) {
+            val nativeHdr = headerArray[i]
+            val hdr = HttpHeader(nativeHdr.name.toKString(), nativeHdr.value.toKString())
+            kheaders.add(hdr)
         }
-
-        try {
-            ctx.handler.onResponseHeaders(stream, stream.responseStatusCode, blockType.value.toInt(), headers)
-        } catch (ex: Exception) {
-            log(LogLevel.Error, "onResponseHeaders: $ex")
-            return aws_raise_error(AWS_ERROR_HTTP_CALLBACK_FAILURE.toInt())
-        }
-
-        return AWS_OP_SUCCESS
+        kheaders
+    } else {
+        null
     }
+
+    try {
+        ctx.handler.onResponseHeaders(stream, stream.responseStatusCode, blockType.value.toInt(), headers)
+    } catch (ex: Exception) {
+        log(LogLevel.Error, "onResponseHeaders: $ex")
+        return callbackError()
+    }
+
+    return AWS_OP_SUCCESS
 }
 
 private fun onResponseHeaderBlockDone(
@@ -124,14 +124,15 @@ private fun onResponseHeaderBlockDone(
     blockType: aws_http_header_block,
     userdata: COpaquePointer?,
 ): Int {
-    val ctx = userdata?.asStableRef<HttpStreamContext>()?.get() ?: return AWS_OP_ERR
-    val stream = ctx.stream ?: return AWS_OP_ERR
+    val stableRef = dereferenceUserdata(userdata) ?: return callbackError()
+    val ctx = stableRef.safeGet() ?: return callbackError()
+    val stream = ctx.stream ?: return callbackError()
 
     try {
         ctx.handler.onResponseHeadersDone(stream, blockType.value.toInt())
     } catch (ex: Exception) {
         log(LogLevel.Error, "onResponseHeaderBlockDone: $ex")
-        return aws_raise_error(AWS_ERROR_HTTP_CALLBACK_FAILURE.toInt())
+        return callbackError()
     }
 
     return AWS_OP_SUCCESS
@@ -142,17 +143,15 @@ private fun onIncomingBody(
     data: CPointer<aws_byte_cursor>?,
     userdata: COpaquePointer?,
 ): Int {
-    val stableRef = try { userdata?.asStableRef<HttpStreamContext>() } catch (_: NullPointerException) { return AWS_OP_ERR }
-    val ctx = try { stableRef?.get() } catch (_: NullPointerException) { return AWS_OP_ERR }
-    if (ctx == null) return AWS_OP_ERR
-    val stream = ctx.stream
-    if (stream == null) return AWS_OP_ERR
+    val stableRef = dereferenceUserdata(userdata) ?: return callbackError()
+    val ctx = stableRef.safeGet() ?: return callbackError()
+    val stream = ctx.stream ?: return callbackError()
 
     try {
         val body = if (data != null) ByteCursorBuffer(data) else Buffer.Empty
         val windowIncrement = ctx.handler.onResponseBody(stream, body)
         if (windowIncrement < 0) {
-            return aws_raise_error(AWS_ERROR_HTTP_CALLBACK_FAILURE.toInt())
+            return callbackError()
         }
 
         if (windowIncrement > 0) {
@@ -160,7 +159,7 @@ private fun onIncomingBody(
         }
     } catch (ex: Exception) {
         log(LogLevel.Error, "onIncomingBody: $ex")
-        return aws_raise_error(AWS_ERROR_HTTP_CALLBACK_FAILURE.toInt())
+        return callbackError()
     }
 
     return AWS_OP_SUCCESS
@@ -171,22 +170,40 @@ private fun onStreamComplete(
     errorCode: Int,
     userdata: COpaquePointer?,
 ) {
-    val stableRef = userdata?.asStableRef<HttpStreamContext>() ?: return
-    val ctx = stableRef.get()
-    val stream = ctx.stream ?: return
-
+    val stableRef = dereferenceUserdata(userdata) ?: return
     try {
-        ctx.handler.onResponseComplete(stream, errorCode)
+        val ctx = stableRef.safeGet() ?: return
+        try {
+            val stream = ctx.stream ?: return
+            ctx.handler.onResponseComplete(stream, errorCode)
+        } finally {
+            // cleanup request object
+            aws_http_message_release(ctx.nativeReq)
+        }
     } catch (ex: Exception) {
         log(LogLevel.Error, "onStreamComplete: $ex")
         // close connection if callback throws an exception
         aws_http_connection_close(aws_http_stream_get_connection(nativeStream))
     } finally {
-        // cleanup stream resources
+        // cleanup userdata
         stableRef.dispose()
-        aws_http_message_destroy(ctx.nativeReq)
     }
 }
+
+private fun dereferenceUserdata(userdata: COpaquePointer?): StableRef<HttpStreamContext>? =
+    try {
+        userdata?.asStableRef<HttpStreamContext>()
+    } catch (_: NullPointerException) {
+        null
+    }
+
+private fun <T : Any> StableRef<T>.safeGet(): T? =
+    try {
+        get()
+    } catch (_: NullPointerException) {
+        // `get()` can throw `NullPointerException` when stream has been canceled and CRT is cleaning up resources
+        null
+    }
 
 internal fun HttpRequest.toNativeRequest(): CPointer<cnames.structs.aws_http_message> {
     val nativeReq = checkNotNull(
