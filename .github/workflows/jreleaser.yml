@@ -4,6 +4,8 @@ name: JReleaser check
 on:
   pull_request:
 
+permissions: { }
+
 jobs:
   jreleaser-check:
     permissions: {}

@@ -12,6 +12,8 @@ env:
   # picks up `podman` instead.
   OCI_EXE: docker
 
+permissions: { }
+
 jobs:
   jvm:
     runs-on: ubuntu-latest
