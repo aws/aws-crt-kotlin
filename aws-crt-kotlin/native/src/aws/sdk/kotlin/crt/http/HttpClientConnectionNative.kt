@@ -194,6 +194,7 @@ private fun dereferenceUserdata(userdata: COpaquePointer?): StableRef<HttpStream
     try {
         userdata?.asStableRef<HttpStreamContext>()
     } catch (_: NullPointerException) {
+        // `asStableRef()` can throw `NullPointerException` when target type can't be coerced to HttpStreamContext
         null
     }
 
