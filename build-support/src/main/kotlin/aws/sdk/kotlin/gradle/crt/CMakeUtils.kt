@@ -11,8 +11,8 @@ import org.jetbrains.kotlin.konan.target.Family
 import org.jetbrains.kotlin.konan.target.KonanTarget
 import java.io.File
 
-fun KotlinNativeTarget.namedSuffix(prefix: String, uppercase: Boolean = false): String =
-    prefix + if (uppercase) name.uppercase() else name
+fun KotlinNativeTarget.namedSuffix(prefix: String, capitalized: Boolean = false): String =
+    prefix + if (capitalized) name.replaceFirstChar { it.uppercase() } else name
 
 val KonanTarget.isSimulatorSdk: Boolean
     get() = when (this) {
@@ -79,13 +79,13 @@ val Project.cmakeLists: File
     get() = rootProject.projectDir.resolve("CMakeLists.txt")
 
 val KotlinNativeTarget.cmakeConfigureTaskName: String
-    get() = namedSuffix("cmakeConfigure", uppercase = true)
+    get() = namedSuffix("cmakeConfigure", capitalized = true)
 
 val KotlinNativeTarget.cmakeBuildTaskName: String
-    get() = namedSuffix("cmakeBuild", uppercase = true)
+    get() = namedSuffix("cmakeBuild", capitalized = true)
 
 val KotlinNativeTarget.cmakeInstallTaskName: String
-    get() = namedSuffix("cmakeInstall", uppercase = true)
+    get() = namedSuffix("cmakeInstall", capitalized = true)
 
 val File.slashPath: String
     get() = path.replace(File.separatorChar, '/')
