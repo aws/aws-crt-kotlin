@@ -198,8 +198,6 @@ if (testJavaVersion != null) {
 }
 
 tasks.withType<AbstractTestTask> {
-    if (this is Test) useJUnitPlatform()
-
     testLogging {
         events("passed", "skipped", "failed")
         showStandardStreams = true
