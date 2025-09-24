@@ -7,11 +7,7 @@ package aws.sdk.kotlin.crt.http
 import aws.sdk.kotlin.crt.*
 import aws.sdk.kotlin.crt.io.Buffer
 import aws.sdk.kotlin.crt.io.ByteCursorBuffer
-import aws.sdk.kotlin.crt.util.asAwsByteCursor
-import aws.sdk.kotlin.crt.util.initFromCursor
-import aws.sdk.kotlin.crt.util.toKString
-import aws.sdk.kotlin.crt.util.use
-import aws.sdk.kotlin.crt.util.withAwsByteCursor
+import aws.sdk.kotlin.crt.util.*
 import kotlinx.atomicfu.atomic
 import kotlinx.cinterop.*
 import libcrt.*
@@ -87,105 +83,100 @@ private class HttpStreamContext(
     val nativeReq: CPointer<cnames.structs.aws_http_message>,
 )
 
+private fun callbackError(): Int = aws_raise_error(AWS_ERROR_HTTP_CALLBACK_FAILURE.toInt())
+
 private fun onResponseHeaders(
     nativeStream: CPointer<cnames.structs.aws_http_stream>?,
     blockType: aws_http_header_block,
     headerArray: CPointer<aws_http_header>?,
     numHeaders: size_t,
     userdata: COpaquePointer?,
-): Int {
-    val ctxStableRef = userdata?.asStableRef<HttpStreamContext>() ?: return aws_raise_error(AWS_ERROR_HTTP_CALLBACK_FAILURE.toInt())
-    ctxStableRef.use {
-        val ctx = it.get()
-        val stream = ctx.stream ?: return AWS_OP_ERR
-
-        val hdrCnt = numHeaders.toInt()
-        val headers: List<HttpHeader>? = if (hdrCnt > 0 && headerArray != null) {
-            val kheaders = mutableListOf<HttpHeader>()
-            for (i in 0 until hdrCnt) {
-                val nativeHdr = headerArray[i]
-                val hdr = HttpHeader(nativeHdr.name.toKString(), nativeHdr.value.toKString())
-                kheaders.add(hdr)
+): Int =
+    userdata?.withDereferenced<HttpStreamContext, _> { ctx ->
+        ctx.stream?.let { stream ->
+            val hdrCnt = numHeaders.toInt()
+            val headers: List<HttpHeader>? = if (hdrCnt > 0 && headerArray != null) {
+                val kheaders = mutableListOf<HttpHeader>()
+                for (i in 0 until hdrCnt) {
+                    val nativeHdr = headerArray[i]
+                    val hdr = HttpHeader(nativeHdr.name.toKString(), nativeHdr.value.toKString())
+                    kheaders.add(hdr)
+                }
+                kheaders
+            } else {
+                null
             }
-            kheaders
-        } else {
-            null
-        }
 
-        try {
-            ctx.handler.onResponseHeaders(stream, stream.responseStatusCode, blockType.value.toInt(), headers)
-        } catch (ex: Exception) {
-            log(LogLevel.Error, "onResponseHeaders: $ex")
-            return aws_raise_error(AWS_ERROR_HTTP_CALLBACK_FAILURE.toInt())
+            try {
+                ctx.handler.onResponseHeaders(stream, stream.responseStatusCode, blockType.value.toInt(), headers)
+                AWS_OP_SUCCESS
+            } catch (ex: Exception) {
+                log(LogLevel.Error, "onResponseHeaders: $ex")
+                null
+            }
         }
-
-        return AWS_OP_SUCCESS
-    }
-}
+    } ?: callbackError()
 
 private fun onResponseHeaderBlockDone(
     nativeStream: CPointer<cnames.structs.aws_http_stream>?,
     blockType: aws_http_header_block,
     userdata: COpaquePointer?,
-): Int {
-    val ctx = userdata?.asStableRef<HttpStreamContext>()?.get() ?: return AWS_OP_ERR
-    val stream = ctx.stream ?: return AWS_OP_ERR
-
-    try {
-        ctx.handler.onResponseHeadersDone(stream, blockType.value.toInt())
-    } catch (ex: Exception) {
-        log(LogLevel.Error, "onResponseHeaderBlockDone: $ex")
-        return aws_raise_error(AWS_ERROR_HTTP_CALLBACK_FAILURE.toInt())
-    }
-
-    return AWS_OP_SUCCESS
-}
+): Int =
+    userdata?.withDereferenced<HttpStreamContext, _> { ctx ->
+        ctx.stream?.let { stream ->
+            try {
+                ctx.handler.onResponseHeadersDone(stream, blockType.value.toInt())
+                AWS_OP_SUCCESS
+            } catch (ex: Exception) {
+                log(LogLevel.Error, "onResponseHeaderBlockDone: $ex")
+                null
+            }
+        }
+    } ?: callbackError()
 
 private fun onIncomingBody(
     nativeStream: CPointer<cnames.structs.aws_http_stream>?,
     data: CPointer<aws_byte_cursor>?,
     userdata: COpaquePointer?,
-): Int {
-    val ctx = userdata?.asStableRef<HttpStreamContext>()?.get() ?: return AWS_OP_ERR
-    val stream = ctx.stream ?: return AWS_OP_ERR
+): Int =
+    userdata?.withDereferenced<HttpStreamContext, _> { ctx ->
+        ctx.stream?.let { stream ->
+            try {
+                val body = if (data != null) ByteCursorBuffer(data) else Buffer.Empty
+                val windowIncrement = ctx.handler.onResponseBody(stream, body)
 
-    try {
-        val body = if (data != null) ByteCursorBuffer(data) else Buffer.Empty
-        val windowIncrement = ctx.handler.onResponseBody(stream, body)
-        if (windowIncrement < 0) {
-            return aws_raise_error(AWS_ERROR_HTTP_CALLBACK_FAILURE.toInt())
+                if (windowIncrement < 0) {
+                    null
+                } else {
+                    if (windowIncrement > 0) {
+                        aws_http_stream_update_window(nativeStream, windowIncrement.convert())
+                    }
+                    AWS_OP_SUCCESS
+                }
+            } catch (ex: Exception) {
+                log(LogLevel.Error, "onIncomingBody: $ex")
+                null
+            }
         }
-
-        if (windowIncrement > 0) {
-            aws_http_stream_update_window(nativeStream, windowIncrement.convert())
-        }
-    } catch (ex: Exception) {
-        log(LogLevel.Error, "onIncomingBody: $ex")
-        return aws_raise_error(AWS_ERROR_HTTP_CALLBACK_FAILURE.toInt())
-    }
-
-    return AWS_OP_SUCCESS
-}
+    } ?: callbackError()
 
 private fun onStreamComplete(
     nativeStream: CPointer<cnames.structs.aws_http_stream>?,
     errorCode: Int,
     userdata: COpaquePointer?,
 ) {
-    val stableRef = userdata?.asStableRef<HttpStreamContext>() ?: return
-    val ctx = stableRef.get()
-    val stream = ctx.stream ?: return
-
-    try {
-        ctx.handler.onResponseComplete(stream, errorCode)
-    } catch (ex: Exception) {
-        log(LogLevel.Error, "onStreamComplete: $ex")
-        // close connection if callback throws an exception
-        aws_http_connection_close(aws_http_stream_get_connection(nativeStream))
-    } finally {
-        // cleanup stream resources
-        stableRef.dispose()
-        aws_http_message_destroy(ctx.nativeReq)
+    userdata?.withDereferenced<HttpStreamContext>(dispose = true) { ctx ->
+        try {
+            val stream = ctx.stream ?: return
+            ctx.handler.onResponseComplete(stream, errorCode)
+        } catch (ex: Exception) {
+            log(LogLevel.Error, "onStreamComplete: $ex")
+            // close connection if callback throws an exception
+            aws_http_connection_close(aws_http_stream_get_connection(nativeStream))
+        } finally {
+            // cleanup request object
+            aws_http_message_release(ctx.nativeReq)
+        }
     }
 }
 

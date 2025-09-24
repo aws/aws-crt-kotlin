@@ -8,6 +8,7 @@ import aws.sdk.kotlin.crt.Allocator
 import aws.sdk.kotlin.crt.LogLevel
 import aws.sdk.kotlin.crt.io.MutableBuffer
 import aws.sdk.kotlin.crt.log
+import aws.sdk.kotlin.crt.util.withDereferenced
 import kotlinx.cinterop.*
 import libcrt.*
 
@@ -17,22 +18,24 @@ private fun streamSeek(
     basis: aws_stream_seek_basis,
 ): Int {
     if (stream == null || basis != AWS_SSB_BEGIN || offset != 0L) return AWS_OP_ERR
-    val handler = stream.pointed.impl?.asStableRef<RequestBodyStream>()?.get() ?: return AWS_OP_ERR
-    var result = AWS_OP_SUCCESS
 
-    try {
-        if (!handler.resetPosition()) {
-            result = AWS_OP_ERR
+    return stream.pointed.impl?.withDereferenced<RequestBodyStream, _> { handler ->
+        var result = AWS_OP_SUCCESS
+
+        try {
+            if (!handler.resetPosition()) {
+                result = AWS_OP_ERR
+            }
+        } catch (ex: Exception) {
+            log(LogLevel.Error, "streamSeek: $ex")
+            return aws_raise_error(AWS_ERROR_HTTP_CALLBACK_FAILURE.toInt())
         }
-    } catch (ex: Exception) {
-        log(LogLevel.Error, "streamSeek: $ex")
-        return aws_raise_error(AWS_ERROR_HTTP_CALLBACK_FAILURE.toInt())
-    }
 
-    if (result == AWS_OP_SUCCESS) {
-        handler.bodyDone = false
-    }
-    return result
+        if (result == AWS_OP_SUCCESS) {
+            handler.bodyDone = false
+        }
+        result
+    } ?: AWS_OP_ERR
 }
 
 private fun streamRead(
@@ -40,21 +43,23 @@ private fun streamRead(
     dest: CPointer<aws_byte_buf>?,
 ): Int {
     if (stream == null || dest == null) return AWS_OP_ERR
-    val handler = stream.pointed.impl?.asStableRef<RequestBodyStream>()?.get() ?: return AWS_OP_ERR
-    if (handler.bodyDone) return AWS_OP_SUCCESS
-
-    try {
-        // MutableBuffer handles updating dest->len
-        val buffer = MutableBuffer(dest)
-        if (handler.khandler.sendRequestBody(buffer)) {
-            handler.bodyDone = true
+    return stream.pointed.impl?.withDereferenced<RequestBodyStream, _> { handler ->
+        if (handler.bodyDone) {
+            AWS_OP_SUCCESS
+        } else {
+            try {
+                // MutableBuffer handles updating dest->len
+                val buffer = MutableBuffer(dest)
+                if (handler.khandler.sendRequestBody(buffer)) {
+                    handler.bodyDone = true
+                }
+                AWS_OP_SUCCESS
+            } catch (ex: Exception) {
+                log(LogLevel.Error, "streamRead: $ex")
+                aws_raise_error(AWS_ERROR_HTTP_CALLBACK_FAILURE.toInt())
+            }
         }
-    } catch (ex: Exception) {
-        log(LogLevel.Error, "streamRead: $ex")
-        return aws_raise_error(AWS_ERROR_HTTP_CALLBACK_FAILURE.toInt())
-    }
-
-    return AWS_OP_SUCCESS
+    } ?: AWS_OP_ERR
 }
 
 private fun streamGetStatus(
@@ -62,10 +67,11 @@ private fun streamGetStatus(
     status: CPointer<aws_stream_status>?,
 ): Int {
     if (stream == null || status == null) return AWS_OP_ERR
-    val handler = stream.pointed.impl?.asStableRef<RequestBodyStream>()?.get() ?: return AWS_OP_ERR
-    status.pointed.is_end_of_stream = handler.bodyDone
-    status.pointed.is_valid = true
-    return AWS_OP_SUCCESS
+    return stream.pointed.impl?.withDereferenced<RequestBodyStream, _> { handler ->
+        status.pointed.is_end_of_stream = handler.bodyDone
+        status.pointed.is_valid = true
+        AWS_OP_SUCCESS
+    } ?: AWS_OP_ERR
 }
 
 @Suppress("unused")
@@ -87,9 +93,9 @@ private fun streamRelease(
     if (stream == null) return
     val refCnt = aws_ref_count_release(stream.pointed.ref_count.ptr)
     if (refCnt.toInt() == 0) {
-        log(LogLevel.Trace, "releasing RequestBodyStream")
-        val stableRef = stream.pointed.impl?.asStableRef<RequestBodyStream>() ?: return
-        stableRef.dispose()
+        stream.pointed.impl?.withDereferenced<RequestBodyStream>(dispose = true) { _ ->
+            log(LogLevel.Trace, "releasing RequestBodyStream")
+        }
         Allocator.Default.free(stream)
     }
 }
@@ -117,10 +123,10 @@ internal fun inputStream(khandler: HttpRequestBodyStream): CPointer<aws_input_st
     return stream.ptr
 }
 
-internal fun CPointer<aws_input_stream>.toHttpRequestBodyStream(): HttpRequestBodyStream {
-    val stableRef = checkNotNull(this.pointed.impl?.asStableRef<RequestBodyStream>()) { "toHttpRequestBodyStream() expected non-null `impl`" }
-    return stableRef.get().khandler
-}
+internal fun CPointer<aws_input_stream>.toHttpRequestBodyStream(): HttpRequestBodyStream =
+    pointed.impl?.withDereferenced<RequestBodyStream, _> { handler ->
+        handler.khandler
+    } ?: error("toHttpRequestBodyStream() expected non-null `impl`")
 
 // wrapper around the actual implementation
 private class RequestBodyStream(
