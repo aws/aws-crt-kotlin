@@ -66,7 +66,6 @@ val KonanTarget.osxArchitectureName
             KonanTarget.WATCHOS_ARM64 -> "arm64_32"
             else -> null
         }
-        else -> null
     }
 
 fun Project.cmakeBuildDir(target: KotlinNativeTarget): File =

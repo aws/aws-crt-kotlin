@@ -10,6 +10,7 @@ import aws.sdk.kotlin.crt.NativeHandle
 import aws.sdk.kotlin.crt.awsAssertOpSuccess
 import aws.sdk.kotlin.crt.util.asAwsByteCursor
 import aws.sdk.kotlin.crt.util.use
+import aws.sdk.kotlin.crt.util.withDereferenced
 import kotlinx.atomicfu.atomic
 import kotlinx.cinterop.*
 import libcrt.*
@@ -67,12 +68,13 @@ internal class HttpStreamNative(
                 throw CrtRuntimeException("aws_input_stream_new_from_cursor()")
             }
 
-            StableRef.create(WriteChunkRequest(cont, byteBuf, stream)).use { req ->
+            val req = WriteChunkRequest(cont, byteBuf, stream)
+            StableRef.create(req).use { stableRef ->
                 val chunkOpts = cValue<aws_http1_chunk_options> {
                     chunk_data_size = chunkData.size.convert()
                     chunk_data = stream
                     on_complete = staticCFunction(::onWriteChunkComplete)
-                    user_data = req.asCPointer()
+                    user_data = stableRef.asCPointer()
                 }
                 awsAssertOpSuccess(
                     aws_http1_stream_write_chunk(ptr, chunkOpts),
@@ -113,19 +115,18 @@ private fun onWriteChunkComplete(
     userData: COpaquePointer?,
 ) {
     if (stream == null) return
-    val stableRef = userData?.asStableRef<WriteChunkRequest>() ?: return
-    val req = stableRef.get()
-    when {
-        errCode != AWS_OP_SUCCESS -> req.cont.resumeWithException(HttpException(errCode))
-        else -> req.cont.resume(Unit)
+    userData?.withDereferenced<WriteChunkRequest> { req ->
+        checkNotNull(req) { "Received null request in onWriteChunkComplete" }
+        when {
+            errCode != AWS_OP_SUCCESS -> req.cont.resumeWithException(HttpException(errCode))
+            else -> req.cont.resume(Unit)
+        }
+        cleanupWriteChunkCbData(req)
     }
-    cleanupWriteChunkCbData(stableRef)
 }
 
-private fun cleanupWriteChunkCbData(stableRef: StableRef<WriteChunkRequest>) {
-    val req = stableRef.get()
+private fun cleanupWriteChunkCbData(req: WriteChunkRequest) {
     aws_input_stream_destroy(req.inputStream)
     aws_byte_buf_clean_up(req.chunkData)
     Allocator.Default.free(req.inputStream)
-    stableRef.dispose()
 }

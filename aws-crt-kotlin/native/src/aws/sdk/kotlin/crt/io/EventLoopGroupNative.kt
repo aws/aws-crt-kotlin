@@ -8,6 +8,7 @@ package aws.sdk.kotlin.crt.io
 import aws.sdk.kotlin.crt.*
 import aws.sdk.kotlin.crt.util.ShutdownChannel
 import aws.sdk.kotlin.crt.util.shutdownChannel
+import aws.sdk.kotlin.crt.util.withDereferenced
 import cnames.structs.aws_event_loop_group
 import kotlinx.cinterop.*
 import libcrt.aws_event_loop_group_new
@@ -64,10 +65,8 @@ public actual class EventLoopGroup actual constructor(maxThreads: Int) :
 
 @OptIn(ExperimentalForeignApi::class)
 private fun onShutdownComplete(userData: COpaquePointer?) {
-    if (userData == null) return
-    val stableRef = userData.asStableRef<ShutdownChannel>()
-    val ch = stableRef.get()
-    ch.trySend(Unit)
-    ch.close()
-    stableRef.dispose()
+    userData?.withDereferenced<ShutdownChannel>(dispose = true) { ch ->
+        ch?.trySend(Unit)
+        ch?.close()
+    }
 }
