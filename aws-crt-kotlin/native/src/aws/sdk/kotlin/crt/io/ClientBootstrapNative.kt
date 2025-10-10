@@ -8,6 +8,7 @@ package aws.sdk.kotlin.crt.io
 import aws.sdk.kotlin.crt.*
 import aws.sdk.kotlin.crt.util.ShutdownChannel
 import aws.sdk.kotlin.crt.util.shutdownChannel
+import aws.sdk.kotlin.crt.util.withDereferenced
 import kotlinx.cinterop.*
 import libcrt.aws_client_bootstrap
 import libcrt.aws_client_bootstrap_new
@@ -61,10 +62,8 @@ public actual class ClientBootstrap private constructor(
 
 @OptIn(ExperimentalForeignApi::class)
 private fun onShutdownComplete(userData: COpaquePointer?) {
-    if (userData == null) return
-    val stableRef = userData.asStableRef<ShutdownChannel>()
-    val ch = stableRef.get()
-    ch.trySend(Unit)
-    ch.close()
-    stableRef.dispose()
+    userData?.withDereferenced<ShutdownChannel> { ch ->
+        ch.trySend(Unit)
+        ch.close()
+    }
 }

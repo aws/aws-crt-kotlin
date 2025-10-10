@@ -183,13 +183,10 @@ private fun SocketDomain.toNativeSocketDomain() = when (this) {
 }
 
 private fun onShutdownComplete(userdata: COpaquePointer?) {
-    if (userdata == null) return
-    val notify = userdata.asStableRef<ShutdownChannel>()
-    with(notify.get()) {
-        trySend(Unit)
-        close()
+    userdata?.withDereferenced<ShutdownChannel>(dispose = true) { notify ->
+        notify.trySend(Unit)
+        notify.close()
     }
-    notify.dispose()
 }
 
 private data class HttpConnectionAcquisitionRequest(
@@ -202,20 +199,16 @@ private fun onConnectionAcquired(
     errCode: Int,
     userdata: COpaquePointer?,
 ) {
-    if (userdata == null) return
-    val stableRef = userdata.asStableRef<HttpConnectionAcquisitionRequest>()
-    val request = stableRef.get()
-
-    when {
-        errCode != AWS_OP_SUCCESS -> request.cont.resumeWithException(HttpException(errCode))
-        conn == null -> request.cont.resumeWithException(
-            CrtRuntimeException("acquireConnection(): http connection null", ec = errCode),
-        )
-        else -> {
-            val kconn = HttpClientConnectionNative(request.manager, conn)
-            request.cont.resume(kconn)
+    userdata?.withDereferenced<HttpConnectionAcquisitionRequest>(dispose = true) { request ->
+        when {
+            errCode != AWS_OP_SUCCESS -> request.cont.resumeWithException(HttpException(errCode))
+            conn == null -> request.cont.resumeWithException(
+                CrtRuntimeException("acquireConnection(): http connection null", ec = errCode),
+            )
+            else -> {
+                val kconn = HttpClientConnectionNative(request.manager, conn)
+                request.cont.resume(kconn)
+            }
         }
     }
-
-    stableRef.dispose()
 }

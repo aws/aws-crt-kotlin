@@ -8,11 +8,7 @@ package aws.sdk.kotlin.crt.auth.signing
 import aws.sdk.kotlin.crt.*
 import aws.sdk.kotlin.crt.auth.credentials.Credentials
 import aws.sdk.kotlin.crt.http.*
-import aws.sdk.kotlin.crt.util.asAwsByteCursor
-import aws.sdk.kotlin.crt.util.initFromCursor
-import aws.sdk.kotlin.crt.util.toAwsString
-import aws.sdk.kotlin.crt.util.toKString
-import aws.sdk.kotlin.crt.util.use
+import aws.sdk.kotlin.crt.util.*
 import kotlinx.cinterop.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
@@ -223,15 +219,10 @@ private fun AwsSigningConfig.toNativeSigningConfig(): CPointer<aws_signing_confi
 private typealias ShouldSignHeaderFunction = (String) -> Boolean
 private fun nativeShouldSignHeaderFn(headerName: CPointer<aws_byte_cursor>?, userData: COpaquePointer?): Boolean {
     checkNotNull(headerName) { "aws_should_sign_header_fn expected non-null header name" }
-    if (userData == null) {
-        return true
-    }
-
-    userData.asStableRef<ShouldSignHeaderFunction>().use {
-        val kShouldSignHeaderFn = it.get()
+    return userData?.withDereferenced<ShouldSignHeaderFunction, _>(dispose = true) { kShouldSignHeaderFn ->
         val kHeaderName = headerName.pointed.toKString()
-        return kShouldSignHeaderFn(kHeaderName)
-    }
+        kShouldSignHeaderFn(kHeaderName)
+    } ?: error("Expected non-null userData")
 }
 
 /**
@@ -243,17 +234,17 @@ private fun signCallback(signingResult: CPointer<aws_signing_result>?, errorCode
     checkNotNull(signingResult) { "signing callback received null aws_signing_result" }
     checkNotNull(userData) { "signing callback received null user data" }
 
-    val (pinnedRequestToSign, callbackChannel) = userData
-        .asStableRef<Pair<Pinned<CPointer<cnames.structs.aws_http_message>>, Channel<ByteArray>>>()
-        .get()
+    userData.withDereferenced<Pair<Pinned<CPointer<cnames.structs.aws_http_message>>, Channel<ByteArray>>> { pair ->
+        val (pinnedRequestToSign, callbackChannel) = pair
 
-    val requestToSign = pinnedRequestToSign.get()
+        val requestToSign = pinnedRequestToSign.get()
 
-    awsAssertOpSuccess(aws_apply_signing_result_to_http_request(requestToSign, Allocator.Default.allocator, signingResult)) {
-        "aws_apply_signing_result_to_http_request"
+        awsAssertOpSuccess(aws_apply_signing_result_to_http_request(requestToSign, Allocator.Default.allocator, signingResult)) {
+            "aws_apply_signing_result_to_http_request"
+        }
+
+        runBlocking { callbackChannel.send(signingResult.getSignature()) }
     }
-
-    runBlocking { callbackChannel.send(signingResult.getSignature()) }
 }
 
 /**
@@ -264,8 +255,9 @@ private fun signChunkCallback(signingResult: CPointer<aws_signing_result>?, erro
     checkNotNull(signingResult) { "signing callback received null aws_signing_result" }
     checkNotNull(userData) { "signing callback received null user data" }
 
-    val callbackChannel = userData.asStableRef<Channel<ByteArray>>().get()
-    runBlocking { callbackChannel.send(signingResult.getSignature()) }
+    userData.withDereferenced<Channel<ByteArray>> { callbackChannel ->
+        runBlocking { callbackChannel.send(signingResult.getSignature()) }
+    }
 }
 
 private fun Credentials.toNativeCredentials(): CPointer<cnames.structs.aws_credentials>? = aws_credentials_new_from_string(
