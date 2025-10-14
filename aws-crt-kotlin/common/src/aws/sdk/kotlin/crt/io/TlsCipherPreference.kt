@@ -30,6 +30,12 @@ public enum class TlsCipherPreference(public val value: Int) {
      */
     PQ_DEFAULT(8),
 
+    /**
+     * This security policy was the system default before PQ was enabled by default, specifically
+     * aws-c-io's AWS_IO_TLS_CIPHER_PREF_TLSV1_0_2023_06.
+     */
+    TLSV1_0_2023_06(10),
+
     ;
 
     /**
