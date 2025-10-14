@@ -62,7 +62,8 @@ if (project.typedProp<Boolean>("kotlinWarningsAsErrors") == true) {
 }
 
 // Publishing
-configureJReleaser()
+tasks.register<SonatypeCentralPortalPublishTask>("publishToCentralPortal") { }
+tasks.register<SonatypeCentralPortalWaitForPublicationTask>("waitForCentralPortalPublication") { }
 
 // Code Style
 val lintPaths = listOf(
