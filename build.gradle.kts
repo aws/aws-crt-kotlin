@@ -73,6 +73,3 @@ val lintPaths = listOf(
 )
 
 configureLinting(lintPaths)
-
-// https://github.com/jreleaser/jreleaser/issues/1492
-tasks.register("clean") {}
