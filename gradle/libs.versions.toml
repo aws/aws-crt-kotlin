@@ -4,7 +4,7 @@ kotlin-version = "2.2.0"
 aws-kotlin-repo-tools-version = "0.4.65"
 
 # libs
-crt-java-version = "0.38.1"
+crt-java-version = "0.39.3"
 coroutines-version = "1.10.2"
 binary-compatibility-validator-version = "0.18.0"
 
