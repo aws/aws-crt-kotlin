@@ -821,8 +821,8 @@ public final class aws/sdk/kotlin/crt/io/SocketType : java/lang/Enum {
 public final class aws/sdk/kotlin/crt/io/TlsCipherPreference : java/lang/Enum {
 	public static final field PQ_DEFAULT Laws/sdk/kotlin/crt/io/TlsCipherPreference;
 	public static final field PQ_TLSV1_2_2024_10 Laws/sdk/kotlin/crt/io/TlsCipherPreference;
-	public static final field TLSV1_0_2023_06 Laws/sdk/kotlin/crt/io/TlsCipherPreference;
 	public static final field SYSTEM_DEFAULT Laws/sdk/kotlin/crt/io/TlsCipherPreference;
+	public static final field TLSV1_0_2023_06 Laws/sdk/kotlin/crt/io/TlsCipherPreference;
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public final fun getValue ()I
 	public final fun isSupported ()Z
