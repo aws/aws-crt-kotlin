@@ -52,13 +52,17 @@ jobs:
           name: test-reports-jvm-${{ matrix.java-version }}
           path: '**/build/reports'
 
-  # macos-14 build and test for targets: jvm, macosArm64, iosSimulatorArm64, watchosSimulatorArm65, tvosSimulatorArm64
-  # macos-13 build and test for targets: jvm, macosX64, iosX64, tvosX64, watchosX64
+  # macOS ARM images build and test for targets: jvm, macosArm64, iosSimulatorArm64, watchosSimulatorArm65, tvosSimulatorArm64
+  # macos x64 images build and test for targets: jvm, macosX64, iosX64, tvosX64, watchosX64
   macos:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-14, macos-13]
+        os:
+          - macos-15-large  # x64
+          - macos-15-xlarge # ARM
+          - macos-14-large  # x64
+          - macos-14-xlarge # ARM
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
