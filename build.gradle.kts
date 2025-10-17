@@ -24,14 +24,8 @@ plugins {
     alias(libs.plugins.kotlinx.binary.compatibility.validator)
     alias(libs.plugins.kotlin.multiplatform) apply false
     alias(libs.plugins.aws.kotlin.repo.tools.kmp)
-    alias(libs.plugins.aws.kotlin.repo.tools.artifactsizemetrics)
 }
 
-artifactSizeMetrics {
-    artifactPrefixes = setOf(":aws-crt-kotlin")
-    significantChangeThresholdPercentage = 5.0
-    projectRepositoryName = "aws-crt-kotlin"
-}
 
 allprojects {
     // Enables running `./gradlew allDeps` to get a comprehensive list of dependencies for every subproject
