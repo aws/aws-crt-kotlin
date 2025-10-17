@@ -36,4 +36,6 @@ jobs:
         with:
           download: 'false'
 
-permissions: {}
+permissions:
+  id-token: write
+  contents: read
