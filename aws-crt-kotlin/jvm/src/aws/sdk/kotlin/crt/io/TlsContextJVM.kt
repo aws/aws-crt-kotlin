@@ -29,6 +29,7 @@ internal actual fun isAlpnSupported(): Boolean = TlsContextOptionsJni.isAlpnSupp
 
 private fun TlsCipherPreference.into(): TlsCipherPreferenceJni = when (this) {
     TlsCipherPreference.SYSTEM_DEFAULT -> TlsCipherPreferenceJni.TLS_CIPHER_SYSTEM_DEFAULT
+    TlsCipherPreference.TLSV1_0_2023_06 -> TlsCipherPreferenceJni.TLS_CIPHER_PREF_TLSv1_0_2023
     TlsCipherPreference.PQ_TLSV1_2_2024_10 -> TlsCipherPreferenceJni.TLS_CIPHER_PREF_PQ_TLSv1_2_2023
     TlsCipherPreference.PQ_DEFAULT -> TlsCipherPreferenceJni.TLS_CIPHER_PQ_DEFAULT
 }
