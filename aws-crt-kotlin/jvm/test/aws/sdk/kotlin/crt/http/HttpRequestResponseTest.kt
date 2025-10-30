@@ -8,9 +8,6 @@ package aws.sdk.kotlin.crt.http
 import aws.sdk.kotlin.crt.util.Digest
 import aws.sdk.kotlin.crt.util.encodeToHex
 import kotlinx.coroutines.runBlocking
-import org.junit.jupiter.api.AfterAll
-import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.TestInstance
 import org.mockserver.client.MockServerClient
 import org.mockserver.integration.ClientAndServer
 import org.mockserver.model.HttpRequest.request
@@ -20,19 +17,17 @@ import kotlin.test.*
 private val TEST_DOC_LINE = "This is a sample to prove that http downloads and uploads work."
 private val TEST_DOC_SHA256 = "c7fdb5314b9742467b16bd5ea2f8012190b5e2c44a005f7984f89aab58219534"
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class HttpRequestResponseTest : HttpClientTest() {
-
     lateinit var mockServer: MockServerClient
     lateinit var url: String
 
-    @BeforeAll
+    @BeforeTest
     fun setup() {
         mockServer = ClientAndServer.startClientAndServer(0)
         url = "http://localhost:${mockServer.port}"
     }
 
-    @AfterAll
+    @AfterTest
     fun tearDown() {
         mockServer.close()
     }

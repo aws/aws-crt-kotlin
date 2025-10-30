@@ -16,10 +16,6 @@ repositories {
 dependencies {
     compileOnly(kotlin("gradle-plugin"))
     compileOnly(kotlin("gradle-plugin-api"))
-
-    testImplementation(libs.junit.jupiter)
-    testImplementation(libs.junit.jupiter.params)
-    testImplementation(libs.kotlin.test.junit5)
 }
 
 gradlePlugin {
@@ -32,7 +28,6 @@ gradlePlugin {
 }
 
 tasks.test {
-    useJUnitPlatform()
     testLogging {
         events("passed", "skipped", "failed")
         showStandardStreams = true
