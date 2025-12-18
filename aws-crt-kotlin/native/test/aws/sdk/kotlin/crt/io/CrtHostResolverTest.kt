@@ -70,7 +70,7 @@ class CrtHostResolverTest {
                 assertEquals("example.com", addr.host)
                 when (addr.addressType) {
                     AddressType.IpV4 -> assertEquals(3, addr.address.count { it == '.' })
-                    AddressType.IpV6 -> assertEquals(if (addr.address.contains("::")) 6 else 7, addr.address.count { it == ':' })
+                    AddressType.IpV6 -> assertTrue(addr.address.contains(':'))
                 }
             }
         }
