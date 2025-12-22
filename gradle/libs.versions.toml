@@ -1,7 +1,7 @@
 [versions]
 kotlin-version = "2.3.0"
 
-aws-kotlin-repo-tools-version = "0.4.76"  # TODO Bump to 0.5.0 before merging this
+aws-kotlin-repo-tools-version = "0.4.76"  # TODO Bump to 0.5.0 before merging
 
 # libs
 crt-java-version = "0.41.0"
