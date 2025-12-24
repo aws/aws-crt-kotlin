@@ -43,7 +43,7 @@ public actual object CRT {
 
             Logging.initialize(config)
             aws_register_log_subject_info_list(s_crt_log_subject_list.ptr)
-            atexit(staticCFunction(::atexitHandler))
+            atexit(staticCFunction { CRT.releaseShutdownRef() })
 
             initialized = true
         }
@@ -122,10 +122,6 @@ public actual object CRT {
             throw IllegalStateException("Shutdown reference count unexpectedly negative")
         }
     }
-}
-
-private fun atexitHandler() {
-    CRT.releaseShutdownRef()
 }
 
 /**
