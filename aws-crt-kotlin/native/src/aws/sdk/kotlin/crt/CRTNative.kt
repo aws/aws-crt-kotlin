@@ -43,7 +43,7 @@ public actual object CRT {
 
             Logging.initialize(config)
             aws_register_log_subject_info_list(s_crt_log_subject_list.ptr)
-            atexit(staticCFunction { CRT.releaseShutdownRef() })
+            atexit(staticCFunction(CRT::releaseShutdownRef))
 
             initialized = true
         }
