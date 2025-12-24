@@ -11,12 +11,13 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import libcrt.*
+import platform.posix.atexit
 
 @OptIn(ExperimentalForeignApi::class)
 public actual object CRT {
     private var initialized = false
     private val initializerMu = Mutex() // protects `initialized`
-    private val shutdownRefCount = atomic(0)
+    private val shutdownRefCount = atomic(1) // starts at 1, decremented by atexit handler
 
     /**
      * Initialize the CRT libraries if needed
@@ -42,6 +43,7 @@ public actual object CRT {
 
             Logging.initialize(config)
             aws_register_log_subject_info_list(s_crt_log_subject_list.ptr)
+            atexit(staticCFunction(::atexitHandler))
 
             initialized = true
         }
@@ -135,4 +137,8 @@ private fun cleanup() {
     aws_cal_library_clean_up()
 
     s_crt_kotlin_clean_up()
+}
+
+private fun atexitHandler() {
+    CRT.releaseShutdownRef()
 }
