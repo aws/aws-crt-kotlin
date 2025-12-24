@@ -55,7 +55,7 @@ public expect object CRT {
     /**
      * Release a reference to the CRT shutdown process.
      * When the shutdown reference count reaches zero, CRT resources will be cleaned up.
-     * 
+     *
      * Each call to [acquireShutdownRef] must have a corresponding call to [releaseShutdownRef].
      */
     public fun releaseShutdownRef()
