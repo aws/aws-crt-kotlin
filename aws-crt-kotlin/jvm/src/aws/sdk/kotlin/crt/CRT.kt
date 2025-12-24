@@ -86,4 +86,12 @@ public actual object CRT {
      * be a non-zero value. Otherwise, no tracing will be done, and the value will always be 0
      */
     public actual fun nativeMemory(): Long = crtJni.nativeMemory()
+
+    public actual fun acquireShutdownRef() {
+        crtJni.acquireShutdownRef()
+    }
+
+    public actual fun releaseShutdownRef() {
+        crtJni.releaseShutdownRef()
+    }
 }

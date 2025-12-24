@@ -45,6 +45,20 @@ public expect object CRT {
      * be a non-zero value. Otherwise, no tracing will be done, and the value will always be 0
      */
     public fun nativeMemory(): Long
+
+    /**
+     * Acquire a reference to the CRT shutdown process. Each call to [acquireShutdownRef] requires a corresponding call
+     * to [releaseShutdownRef] when the caller is ready for the CRT to be shut down.
+     */
+    public fun acquireShutdownRef()
+
+    /**
+     * Release a reference to the CRT shutdown process.
+     * When the shutdown reference count reaches zero, CRT resources will be cleaned up.
+     * 
+     * Each call to [acquireShutdownRef] must have a corresponding call to [releaseShutdownRef].
+     */
+    public fun releaseShutdownRef()
 }
 
 /**
