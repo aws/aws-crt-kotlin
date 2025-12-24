@@ -43,7 +43,7 @@ public actual object CRT {
 
             Logging.initialize(config)
             aws_register_log_subject_info_list(s_crt_log_subject_list.ptr)
-            atexit(staticCFunction(CRT::releaseShutdownRef))
+            atexit(staticCFunction(::atexitHandler))
 
             initialized = true
         }
@@ -137,4 +137,8 @@ private fun cleanup() {
     aws_cal_library_clean_up()
 
     s_crt_kotlin_clean_up()
+}
+
+private fun atexitHandler() {
+    CRT.releaseShutdownRef()
 }
