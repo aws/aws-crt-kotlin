@@ -92,8 +92,10 @@ class HttpClientConnectionTest : CrtTest() {
      */
     private suspend fun assertConnectFails(url: String, exceptionMessages: Set<String>) {
         val ex = assertFails { connectAllCiphers(url) }
-        assertTrue(exceptionMessages.any { ex.message!!.contains(it) },
-        "Exception message \"${ex.message}\" did not contain any of the expected ${exceptionMessages.joinToString(prefix = "\"", postfix = "\"")}")
+        assertTrue(
+            exceptionMessages.any { ex.message!!.contains(it) },
+            "Exception message \"${ex.message}\" did not contain any of the expected ${exceptionMessages.joinToString(prefix = "\"", postfix = "\"")}",
+        )
     }
 
     /**
