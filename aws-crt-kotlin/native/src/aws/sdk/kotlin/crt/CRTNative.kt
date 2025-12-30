@@ -5,7 +5,6 @@
 
 package aws.sdk.kotlin.crt
 
-import kotlinx.atomicfu.atomic
 import kotlinx.cinterop.*
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
@@ -13,11 +12,14 @@ import kotlinx.coroutines.sync.withLock
 import libcrt.*
 import platform.posix.atexit
 
+private val shutdownHandleManager = ShutdownHandleManager()
+private val handle = runBlocking { shutdownHandleManager.acquire() }
+private fun atexitHandler() { CRT.releaseShutdownRef(handle) }
+
 @OptIn(ExperimentalForeignApi::class)
 public actual object CRT {
     private var initialized = false
     private val initializerMu = Mutex() // protects `initialized`
-    private val shutdownRefCount = atomic(1) // starts at 1, decremented by atexit handler
 
     /**
      * Initialize the CRT libraries if needed
@@ -106,20 +108,22 @@ public actual object CRT {
             0
         }
 
-    public actual fun acquireShutdownRef() {
-        val currentCount = shutdownRefCount.value
-        if (currentCount <= 0) {
-            throw IllegalStateException("Shutdown reference count unexpectedly negative")
+    public actual fun acquireShutdownRef(): CrtShutdownHandle = runBlocking {
+        shutdownHandleManager.acquire().also {
+            log(LogLevel.Trace, "Vending CRT shutdown handle $it")
         }
-        shutdownRefCount.incrementAndGet()
+
     }
 
-    public actual fun releaseShutdownRef() {
-        val newCount = shutdownRefCount.decrementAndGet()
-        if (newCount == 0) {
+    public actual fun releaseShutdownRef(handle: CrtShutdownHandle): Unit = runBlocking {
+        if (shutdownHandleManager.release(handle)) {
+            log(LogLevel.Trace, "Released CRT shutdown handle $handle")
+        } else {
+            log(LogLevel.Warn, "CRT shutdown handle $handle does not exist and may have already been released!")
+        }
+
+        if (!shutdownHandleManager.hasActiveHandles) {
             cleanup()
-        } else if (newCount < 0) {
-            throw IllegalStateException("Shutdown reference count unexpectedly negative")
         }
     }
 }
@@ -137,8 +141,4 @@ private fun cleanup() {
     aws_cal_library_clean_up()
 
     s_crt_kotlin_clean_up()
-}
-
-private fun atexitHandler() {
-    CRT.releaseShutdownRef()
 }

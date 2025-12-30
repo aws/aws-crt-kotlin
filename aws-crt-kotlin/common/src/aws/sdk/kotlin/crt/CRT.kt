@@ -50,7 +50,7 @@ public expect object CRT {
      * Acquire a reference to the CRT shutdown process. Each call to [acquireShutdownRef] requires a corresponding call
      * to [releaseShutdownRef] when the caller is ready for the CRT to be shut down.
      */
-    public fun acquireShutdownRef()
+    public fun acquireShutdownRef(): CrtShutdownHandle
 
     /**
      * Release a reference to the CRT shutdown process.
@@ -58,7 +58,7 @@ public expect object CRT {
      *
      * Each call to [acquireShutdownRef] must have a corresponding call to [releaseShutdownRef].
      */
-    public fun releaseShutdownRef()
+    public fun releaseShutdownRef(handle: CrtShutdownHandle)
 }
 
 /**

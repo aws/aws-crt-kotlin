@@ -4,7 +4,7 @@ public abstract interface class aws/sdk/kotlin/crt/AsyncShutdown {
 
 public final class aws/sdk/kotlin/crt/CRT {
 	public static final field INSTANCE Laws/sdk/kotlin/crt/CRT;
-	public final fun acquireShutdownRef ()V
+	public final fun acquireShutdownRef ()Laws/sdk/kotlin/crt/CrtShutdownHandle;
 	public final fun errorName (I)Ljava/lang/String;
 	public final fun errorString (I)Ljava/lang/String;
 	public final fun initRuntime (Lkotlin/jvm/functions/Function1;)V
@@ -12,7 +12,7 @@ public final class aws/sdk/kotlin/crt/CRT {
 	public final fun isHttpErrorRetryable (I)Z
 	public final fun lastError ()I
 	public final fun nativeMemory ()J
-	public final fun releaseShutdownRef ()V
+	public final fun releaseShutdownRef (Laws/sdk/kotlin/crt/CrtShutdownHandle;)V
 }
 
 public abstract interface class aws/sdk/kotlin/crt/Closeable {
@@ -41,6 +41,10 @@ public class aws/sdk/kotlin/crt/CrtRuntimeException : java/lang/RuntimeException
 	public final fun getErrorDescription ()Ljava/lang/String;
 	public final fun getErrorName ()Ljava/lang/String;
 	public fun getMessage ()Ljava/lang/String;
+}
+
+public abstract interface class aws/sdk/kotlin/crt/CrtShutdownHandle {
+	public abstract fun getId ()Ljava/lang/String;
 }
 
 public final class aws/sdk/kotlin/crt/LogDestination : java/lang/Enum {
