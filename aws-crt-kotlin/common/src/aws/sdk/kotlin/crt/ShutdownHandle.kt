@@ -15,7 +15,7 @@ public interface CrtShutdownHandle {
 }
 
 @OptIn(ExperimentalUuidApi::class)
-internal data class CrtShutdownHandleImpl(override val id: String = Uuid.random().toString()) : CrtShutdownHandle
+private data class CrtShutdownHandleImpl(override val id: String = Uuid.random().toString()) : CrtShutdownHandle
 
 internal class ShutdownHandleManager {
     private val mutex = Mutex() // for handles
