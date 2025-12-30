@@ -1,3 +1,8 @@
+/*
+ * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 package aws.sdk.kotlin.crt
 
 import kotlinx.coroutines.sync.Mutex
@@ -5,12 +10,14 @@ import kotlinx.coroutines.sync.withLock
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
-public interface CrtShutdownHandle { public val id: String }
+public interface CrtShutdownHandle {
+    public val id: String
+}
 
 @OptIn(ExperimentalUuidApi::class)
 internal data class CrtShutdownHandleImpl(override val id: String = Uuid.random().toString()) : CrtShutdownHandle
 
-internal class ShutdownHandleManager() {
+internal class ShutdownHandleManager {
     private val mutex = Mutex() // for handles
     private val handles = mutableSetOf<CrtShutdownHandle>()
 
