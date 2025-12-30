@@ -110,13 +110,11 @@ public actual object CRT {
             0
         }
 
-    public actual fun acquireShutdownRef(): CrtShutdownHandle = runBlocking {
-        shutdownHandleManager.acquire().also {
-            log(LogLevel.Trace, "Vending CRT shutdown handle $it")
-        }
+    public actual suspend fun acquireShutdownRef(): CrtShutdownHandle = shutdownHandleManager.acquire().also {
+        log(LogLevel.Trace, "Vending CRT shutdown handle $it")
     }
 
-    public actual fun releaseShutdownRef(handle: CrtShutdownHandle): Unit = runBlocking {
+    public actual suspend fun releaseShutdownRef(handle: CrtShutdownHandle) {
         if (shutdownHandleManager.release(handle)) {
             log(LogLevel.Trace, "Released CRT shutdown handle $handle")
         } else {

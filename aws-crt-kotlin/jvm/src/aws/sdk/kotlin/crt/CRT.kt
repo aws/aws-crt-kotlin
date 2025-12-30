@@ -88,14 +88,14 @@ public actual object CRT {
      */
     public actual fun nativeMemory(): Long = crtJni.nativeMemory()
 
-    public actual fun acquireShutdownRef(): CrtShutdownHandle = runBlocking {
+    public actual suspend fun acquireShutdownRef(): CrtShutdownHandle {
         crtJni.acquireShutdownRef()
-        shutdownHandleManager.acquire().also {
+        return shutdownHandleManager.acquire().also {
             Log.log(Log.LogLevel.Trace, Log.LogSubject.JavaCrtGeneral, "Vending CRT shutdown handle $it")
         }
     }
 
-    public actual fun releaseShutdownRef(handle: CrtShutdownHandle): Unit = runBlocking {
+    public actual suspend fun releaseShutdownRef(handle: CrtShutdownHandle) {
         if (shutdownHandleManager.release(handle)) {
             Log.log(Log.LogLevel.Trace, Log.LogSubject.JavaCrtGeneral, "Released CRT shutdown handle $handle")
         } else {
