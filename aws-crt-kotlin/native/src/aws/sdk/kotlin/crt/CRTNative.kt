@@ -14,8 +14,8 @@ import platform.posix.atexit
 
 private val shutdownHandleManager = ShutdownHandleManager()
 private val handle = runBlocking { shutdownHandleManager.acquire() }
-private suspend fun atexitHandler() {
-    CRT.releaseShutdownRef(handle)
+private fun atexitHandler() {
+    runBlocking { CRT.releaseShutdownRef(handle) }
 }
 
 @OptIn(ExperimentalForeignApi::class)
