@@ -12,6 +12,12 @@ import kotlinx.coroutines.sync.withLock
 import libcrt.*
 import platform.posix.atexit
 
+private val shutdownHandleManager = ShutdownHandleManager()
+private val handle = runBlocking { shutdownHandleManager.acquire() }
+private fun atexitHandler() {
+    runBlocking { CRT.releaseShutdownRef(handle) }
+}
+
 @OptIn(ExperimentalForeignApi::class)
 public actual object CRT {
     private var initialized = false
@@ -41,7 +47,7 @@ public actual object CRT {
 
             Logging.initialize(config)
             aws_register_log_subject_info_list(s_crt_log_subject_list.ptr)
-            atexit(staticCFunction(::cleanup))
+            atexit(staticCFunction(::atexitHandler))
 
             initialized = true
         }
@@ -103,6 +109,22 @@ public actual object CRT {
         } else {
             0
         }
+
+    public actual suspend fun acquireShutdownRef(): CrtShutdownHandle = shutdownHandleManager.acquire().also {
+        log(LogLevel.Trace, "Vending CRT shutdown handle $it")
+    }
+
+    public actual suspend fun releaseShutdownRef(handle: CrtShutdownHandle) {
+        if (shutdownHandleManager.release(handle)) {
+            log(LogLevel.Trace, "Released CRT shutdown handle $handle")
+        } else {
+            log(LogLevel.Warn, "CRT shutdown handle $handle does not exist and may have already been released!")
+        }
+
+        if (!shutdownHandleManager.hasActiveHandles) {
+            cleanup()
+        }
+    }
 }
 
 /**

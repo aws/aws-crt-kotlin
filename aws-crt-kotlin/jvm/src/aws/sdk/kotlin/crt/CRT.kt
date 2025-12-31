@@ -16,6 +16,7 @@ import software.amazon.awssdk.crt.CRT as crtJni
 public actual object CRT {
     private var initialized = false
     private val initializerMu = Mutex() // protects `initialized`
+    private val shutdownHandleManager = ShutdownHandleManager()
 
     public actual fun initRuntime(block: Config.() -> Unit) {
         if (initialized) {
@@ -86,4 +87,20 @@ public actual object CRT {
      * be a non-zero value. Otherwise, no tracing will be done, and the value will always be 0
      */
     public actual fun nativeMemory(): Long = crtJni.nativeMemory()
+
+    public actual suspend fun acquireShutdownRef(): CrtShutdownHandle {
+        crtJni.acquireShutdownRef()
+        return shutdownHandleManager.acquire().also {
+            Log.log(Log.LogLevel.Trace, Log.LogSubject.JavaCrtGeneral, "Vending CRT shutdown handle $it")
+        }
+    }
+
+    public actual suspend fun releaseShutdownRef(handle: CrtShutdownHandle) {
+        if (shutdownHandleManager.release(handle)) {
+            Log.log(Log.LogLevel.Trace, Log.LogSubject.JavaCrtGeneral, "Released CRT shutdown handle $handle")
+        } else {
+            Log.log(Log.LogLevel.Warn, Log.LogSubject.JavaCrtGeneral, "CRT shutdown handle $handle does not exist and may have already been released!")
+        }
+        crtJni.releaseShutdownRef()
+    }
 }
