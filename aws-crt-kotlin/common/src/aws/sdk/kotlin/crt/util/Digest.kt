@@ -20,8 +20,7 @@ public expect object Digest {
  * Get a hex string representation of [buffer]
  */
 @OptIn(ExperimentalUnsignedTypes::class)
-public fun Digest.hex(buffer: ByteArray): String =
-    buffer.asUByteArray().joinToString("") { it.toString(16).padStart(2, '0') }
+public fun Digest.hex(buffer: ByteArray): String = buffer.asUByteArray().joinToString("") { it.toString(16).padStart(2, '0') }
 
 /**
  * Get a hex string representation of this byte array

@@ -31,8 +31,7 @@ public actual object AwsSigner {
      * @param config signing configuration
      * @return signed request
      */
-    public actual suspend fun signRequest(request: HttpRequest, config: AwsSigningConfig): HttpRequest =
-        checkNotNull(sign(request, config).signedRequest) { "AwsSigningResult request must not be null" }
+    public actual suspend fun signRequest(request: HttpRequest, config: AwsSigningConfig): HttpRequest = checkNotNull(sign(request, config).signedRequest) { "AwsSigningResult request must not be null" }
 
     /**
      * Signs an http request according to the supplied signing configuration

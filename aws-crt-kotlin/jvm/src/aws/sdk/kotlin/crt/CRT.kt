@@ -36,8 +36,11 @@ public actual object CRT {
                 val logLevel = Log.LogLevel.valueOf(config.logLevel.name)
                 when (config.logDestination) {
                     LogDestination.None -> return@runBlocking
+
                     LogDestination.Stdout -> Log.initLoggingToStdout(logLevel)
+
                     LogDestination.Stderr -> Log.initLoggingToStderr(logLevel)
+
                     LogDestination.File -> {
                         val logfile = config.logFile
                         requireNotNull(logfile) { "log filename must be specified when LogDestination.File is specified" }

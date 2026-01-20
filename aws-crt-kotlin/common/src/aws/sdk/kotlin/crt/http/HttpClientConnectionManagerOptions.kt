@@ -53,8 +53,7 @@ public class HttpClientConnectionManagerOptions internal constructor(
         public const val DEFAULT_INITIAL_WINDOW_SIZE: Int = 16 * 1024
         public const val DEFAULT_MAX_CONNECTIONS: Int = 2
 
-        public fun build(block: HttpClientConnectionManagerOptionsBuilder.() -> Unit): HttpClientConnectionManagerOptions =
-            HttpClientConnectionManagerOptionsBuilder().apply(block).build()
+        public fun build(block: HttpClientConnectionManagerOptionsBuilder.() -> Unit): HttpClientConnectionManagerOptions = HttpClientConnectionManagerOptionsBuilder().apply(block).build()
     }
 }
 

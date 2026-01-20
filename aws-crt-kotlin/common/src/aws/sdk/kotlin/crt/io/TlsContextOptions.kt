@@ -27,8 +27,7 @@ public class TlsContextOptions internal constructor(builder: TlsContextOptionsBu
 
     public companion object {
 
-        public fun build(block: TlsContextOptionsBuilder.() -> Unit): TlsContextOptions =
-            TlsContextOptionsBuilder().apply(block).build()
+        public fun build(block: TlsContextOptionsBuilder.() -> Unit): TlsContextOptions = TlsContextOptionsBuilder().apply(block).build()
 
         /**
          * Helper which creates a default set of TLS options for the current platform

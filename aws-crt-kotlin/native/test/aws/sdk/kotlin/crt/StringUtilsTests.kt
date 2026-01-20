@@ -88,6 +88,5 @@ class StringTests : CrtTest() {
         }
     }
 
-    private fun assertCursorEquals(expected: String, cursor: CValue<aws_byte_cursor>) =
-        assertCursorEquals(expected.encodeToByteArray(), cursor)
+    private fun assertCursorEquals(expected: String, cursor: CValue<aws_byte_cursor>) = assertCursorEquals(expected.encodeToByteArray(), cursor)
 }

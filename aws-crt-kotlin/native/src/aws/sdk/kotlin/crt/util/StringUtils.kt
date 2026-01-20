@@ -30,8 +30,7 @@ public fun CPointerVar<aws_string>.toKString(): String? {
 /**
  * Get a byte cursor from the current aws_string instance
  */
-public fun CPointer<aws_string>.asAwsByteCursor(): CValue<aws_byte_cursor> =
-    aws_byte_cursor_from_string(this)
+public fun CPointer<aws_string>.asAwsByteCursor(): CValue<aws_byte_cursor> = aws_byte_cursor_from_string(this)
 
 /**
  * Free the aws_string instance
@@ -44,8 +43,7 @@ public fun CPointer<aws_string>.free() {
  * Decode the kotlin [String] as an aws_string instance
  * Caller is responsible for freeing
  */
-public fun String.toAwsString(): CPointer<aws_string> =
-    aws_string_new_from_c_str(Allocator.Default, this) ?: throw CrtRuntimeException("aws_string_new_from_c_string($this)")
+public fun String.toAwsString(): CPointer<aws_string> = aws_string_new_from_c_str(Allocator.Default, this) ?: throw CrtRuntimeException("aws_string_new_from_c_string($this)")
 
 // NOTE - we can't use aws_byte_cursor_from_c_str() (which takes a Kotlin string). The way Kotlin
 // manages memory through this bridge is incompatible. I'm fairly certain it's because they encode the String to
@@ -79,8 +77,7 @@ public inline fun aws_byte_cursor.initFromCursor(cur: CValue<aws_byte_cursor>) {
 /**
  * Interpret this byte cursor as a Kotlin string
  */
-public inline fun aws_byte_cursor.toKString(): String =
-    ptr?.readBytes(len.convert())?.decodeToString() ?: ""
+public inline fun aws_byte_cursor.toKString(): String = ptr?.readBytes(len.convert())?.decodeToString() ?: ""
 
 /**
  * Interpret this byte cursor as a Kotlin string

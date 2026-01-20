@@ -31,8 +31,11 @@ internal object Logging {
                     val options = cValue<aws_logger_standard_options> {
                         when (config.logDestination) {
                             LogDestination.None -> return@runBlocking
+
                             LogDestination.Stdout -> file = platform.posix.stdout
+
                             LogDestination.Stderr -> file = platform.posix.stderr
+
                             LogDestination.File ->
                                 filename =
                                     requireNotNull(config.logFile?.cstr?.ptr) { "LogDestination.File configured without logFile" }

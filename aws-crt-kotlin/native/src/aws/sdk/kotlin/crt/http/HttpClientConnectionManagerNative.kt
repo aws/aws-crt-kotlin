@@ -132,12 +132,11 @@ public actual class HttpClientConnectionManager actual constructor(
     /**
      * Request an HttpClientConnection from the pool
      */
-    public actual suspend fun acquireConnection(): HttpClientConnection =
-        suspendCoroutine { cont ->
-            val cb = staticCFunction(::onConnectionAcquired)
-            val userdata = StableRef.create(HttpConnectionAcquisitionRequest(cont, this))
-            aws_http_connection_manager_acquire_connection(manager, cb, userdata.asCPointer())
-        }
+    public actual suspend fun acquireConnection(): HttpClientConnection = suspendCoroutine { cont ->
+        val cb = staticCFunction(::onConnectionAcquired)
+        val userdata = StableRef.create(HttpConnectionAcquisitionRequest(cont, this))
+        aws_http_connection_manager_acquire_connection(manager, cb, userdata.asCPointer())
+    }
 
     /**
      * Releases this HttpClientConnection back into the Connection Pool, and allows another Request to acquire this connection.
@@ -202,9 +201,11 @@ private fun onConnectionAcquired(
     userdata?.withDereferenced<HttpConnectionAcquisitionRequest>(dispose = true) { request ->
         when {
             errCode != AWS_OP_SUCCESS -> request.cont.resumeWithException(HttpException(errCode))
+
             conn == null -> request.cont.resumeWithException(
                 CrtRuntimeException("acquireConnection(): http connection null", ec = errCode),
             )
+
             else -> {
                 val kconn = HttpClientConnectionNative(request.manager, conn)
                 request.cont.resume(kconn)

@@ -11,8 +11,7 @@ import org.jetbrains.kotlin.konan.target.Family
 import org.jetbrains.kotlin.konan.target.KonanTarget
 import java.io.File
 
-fun KotlinNativeTarget.namedSuffix(prefix: String, capitalized: Boolean = false): String =
-    prefix + if (capitalized) name.replaceFirstChar { it.uppercase() } else name
+fun KotlinNativeTarget.namedSuffix(prefix: String, capitalized: Boolean = false): String = prefix + if (capitalized) name.replaceFirstChar { it.uppercase() } else name
 
 val KonanTarget.isSimulatorSdk: Boolean
     get() = when (this) {
@@ -21,6 +20,7 @@ val KonanTarget.isSimulatorSdk: Boolean
         KonanTarget.WATCHOS_SIMULATOR_ARM64,
         KonanTarget.WATCHOS_X64,
         -> true
+
         else -> false
     }
 
@@ -35,16 +35,22 @@ const val WATCHOS_SIMULATOR_SDK = "watchsimulator"
 val KonanTarget.osxDeviceSdkName: String?
     get() = when (this) {
         KonanTarget.IOS_ARM64 -> IOS_DEVICE_SDK
+
         KonanTarget.IOS_SIMULATOR_ARM64, KonanTarget.IOS_X64 -> IOS_SIMULATOR_SDK
+
         KonanTarget.TVOS_ARM64 -> TVOS_DEVICE_SDK
+
         KonanTarget.TVOS_SIMULATOR_ARM64, KonanTarget.TVOS_X64 -> TVOS_SIMULATOR_SDK
+
         KonanTarget.WATCHOS_ARM32,
         KonanTarget.WATCHOS_ARM64,
         KonanTarget.WATCHOS_DEVICE_ARM64,
         -> WATCHOS_DEVICE_SDK
+
         KonanTarget.WATCHOS_SIMULATOR_ARM64,
         KonanTarget.WATCHOS_X64,
         -> WATCHOS_SIMULATOR_SDK
+
         else -> null
     }
 
@@ -59,8 +65,11 @@ val KonanTarget.osxSystemName: String?
 val KonanTarget.osxArchitectureName
     get() = when (architecture) {
         Architecture.X64 -> "x86_64"
+
         Architecture.X86 -> "i386"
+
         Architecture.ARM64 -> "arm64"
+
         Architecture.ARM32 -> when (this) {
             KonanTarget.WATCHOS_ARM32 -> "armv7k"
             KonanTarget.WATCHOS_ARM64 -> "arm64_32"
@@ -68,11 +77,9 @@ val KonanTarget.osxArchitectureName
         }
     }
 
-fun Project.cmakeBuildDir(target: KotlinNativeTarget): File =
-    project.rootProject.layout.buildDirectory.file(target.namedSuffix("cmake-build/")).get().asFile
+fun Project.cmakeBuildDir(target: KotlinNativeTarget): File = project.rootProject.layout.buildDirectory.file(target.namedSuffix("cmake-build/")).get().asFile
 
-fun Project.cmakeInstallDir(target: KotlinNativeTarget): File =
-    project.rootProject.layout.buildDirectory.file(target.namedSuffix("crt-libs/")).get().asFile
+fun Project.cmakeInstallDir(target: KotlinNativeTarget): File = project.rootProject.layout.buildDirectory.file(target.namedSuffix("crt-libs/")).get().asFile
 
 val Project.cmakeLists: File
     get() = rootProject.projectDir.resolve("CMakeLists.txt")
