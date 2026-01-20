@@ -1,10 +1,10 @@
 [versions]
 kotlin-version = "2.3.0"
 
-aws-kotlin-repo-tools-version = "0.4.76"  # TODO Bump to 0.5.0 before merging
+aws-kotlin-repo-tools-version = "0.5.0"
 
 # libs
-crt-java-version = "0.41.0"
+crt-java-version = "0.42.2"
 coroutines-version = "1.10.2"
 binary-compatibility-validator-version = "0.18.1"
 
