@@ -1,8 +1,0 @@
-{
-    "id": "8205cd57-6e60-400b-84e2-90c94b954373",
-    "type": "feature",
-    "description": "Add reference counting to CRT shutdown process",
-    "issues": [
-        "https://github.com/aws/aws-crt-kotlin/issues/207"
-    ]
-}

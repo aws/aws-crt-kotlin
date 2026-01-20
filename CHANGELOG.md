@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.12.0] - 01/20/2026
+
+### Features
+* [#207](https://github.com/aws/aws-crt-kotlin/issues/207) Add reference counting to CRT shutdown process
+
 ## [0.11.7] - 11/04/2025
 
 ## [0.11.6] - 10/10/2025
