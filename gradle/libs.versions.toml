@@ -1,16 +1,15 @@
 [versions]
-kotlin-version = "2.2.0"
+kotlin-version = "2.3.0"
 
-aws-kotlin-repo-tools-version = "0.4.65"
+aws-kotlin-repo-tools-version = "0.5.0"
 
 # libs
-crt-java-version = "0.39.3"
+crt-java-version = "0.42.2"
 coroutines-version = "1.10.2"
-binary-compatibility-validator-version = "0.18.0"
+binary-compatibility-validator-version = "0.18.1"
 
 # testing
-junit-version = "5.13.2"
-kotest-version = "5.9.1"
+junit-version = "6.0.1"
 mock-server-version = "5.15.0"
 
 [libraries]

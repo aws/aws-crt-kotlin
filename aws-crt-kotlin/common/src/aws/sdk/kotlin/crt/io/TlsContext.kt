@@ -19,5 +19,4 @@ public expect class TlsContext(options: TlsContextOptions? = null) : Closeable {
 /**
  * Build and configure a TLS context in the given [block]
  */
-public fun TlsContext.Companion.build(block: TlsContextOptionsBuilder.() -> Unit): TlsContext =
-    TlsContextOptionsBuilder().apply(block).build().let { TlsContext(it) }
+public fun TlsContext.Companion.build(block: TlsContextOptionsBuilder.() -> Unit): TlsContext = TlsContextOptionsBuilder().apply(block).build().let { TlsContext(it) }

@@ -48,8 +48,7 @@ public actual class MutableBuffer private constructor(
         /**
          * Create a buffer instance backed by [src]
          */
-        public actual fun of(src: ByteArray): MutableBuffer =
-            MutableBuffer(InnerBuffer.KBuffer(src))
+        public actual fun of(src: ByteArray): MutableBuffer = MutableBuffer(InnerBuffer.KBuffer(src))
     }
 }
 

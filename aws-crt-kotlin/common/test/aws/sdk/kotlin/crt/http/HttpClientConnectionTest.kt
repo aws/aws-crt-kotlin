@@ -71,8 +71,8 @@ class HttpClientConnectionTest : CrtTest() {
         // bad ssl
         // assertConnect("https://rsa2048.badssl.com/")
         assertConnect("http://http.badssl.com/")
-        assertConnectFails("https://expired.badssl.com/", "TLS (SSL) negotiation failed")
-        assertConnectFails("https://self-signed.badssl.com/", "TLS (SSL) negotiation failed")
+        assertConnectFails("https://expired.badssl.com/", setOf("TLS (SSL) negotiation failed", "tls certificate is malformed or not correctly formatted"))
+        assertConnectFails("https://self-signed.badssl.com/", setOf("TLS (SSL) negotiation failed", "tls certificate is malformed or not correctly formatted"))
     }
 
     /**
@@ -88,11 +88,14 @@ class HttpClientConnectionTest : CrtTest() {
     }
 
     /**
-     * Assert that an attempt to connect to the given [url] fails with the given [exceptionMessage]
+     * Assert that an attempt to connect to the given [url] fails with any of the given [exceptionMessages]
      */
-    private suspend fun assertConnectFails(url: String, exceptionMessage: String) {
+    private suspend fun assertConnectFails(url: String, exceptionMessages: Set<String>) {
         val ex = assertFails { connectAllCiphers(url) }
-        assertTrue(ex.message!!.contains(exceptionMessage))
+        assertTrue(
+            exceptionMessages.any { ex.message!!.contains(it) },
+            "Exception message \"${ex.message}\" did not contain any of the expected ${exceptionMessages.joinToString(prefix = "\"", postfix = "\"")}",
+        )
     }
 
     /**

@@ -123,10 +123,9 @@ internal fun inputStream(khandler: HttpRequestBodyStream): CPointer<aws_input_st
     return stream.ptr
 }
 
-internal fun CPointer<aws_input_stream>.toHttpRequestBodyStream(): HttpRequestBodyStream =
-    pointed.impl?.withDereferenced<RequestBodyStream, _> { handler ->
-        handler.khandler
-    } ?: error("toHttpRequestBodyStream() expected non-null `impl`")
+internal fun CPointer<aws_input_stream>.toHttpRequestBodyStream(): HttpRequestBodyStream = pointed.impl?.withDereferenced<RequestBodyStream, _> { handler ->
+    handler.khandler
+} ?: error("toHttpRequestBodyStream() expected non-null `impl`")
 
 // wrapper around the actual implementation
 private class RequestBodyStream(
