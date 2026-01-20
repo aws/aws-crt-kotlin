@@ -22,8 +22,7 @@ public actual class TlsContext actual constructor(options: TlsContextOptions?) :
     }
 }
 
-internal actual fun isCipherSupported(cipher: TlsCipherPreference): Boolean =
-    TlsContextOptionsJni.isCipherPreferenceSupported(cipher.into())
+internal actual fun isCipherSupported(cipher: TlsCipherPreference): Boolean = TlsContextOptionsJni.isCipherPreferenceSupported(cipher.into())
 
 internal actual fun isAlpnSupported(): Boolean = TlsContextOptionsJni.isAlpnSupported()
 

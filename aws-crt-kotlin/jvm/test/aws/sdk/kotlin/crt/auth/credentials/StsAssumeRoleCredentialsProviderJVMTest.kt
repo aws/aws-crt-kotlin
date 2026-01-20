@@ -17,8 +17,7 @@ class StsAssumeRoleCredentialsProviderJVMTest {
     @Test
     fun itAdaptsSdkToCrtCredentialsProviderTypes() {
         val sdkCredentialsProvider = object : CredentialsProvider {
-            override suspend fun getCredentials(): Credentials =
-                Credentials(ACCESS_KEY, SECRET_ACCESS_KEY, SESSION_TOKEN)
+            override suspend fun getCredentials(): Credentials = Credentials(ACCESS_KEY, SECRET_ACCESS_KEY, SESSION_TOKEN)
 
             override fun close() {}
             override suspend fun waitForShutdown() {}

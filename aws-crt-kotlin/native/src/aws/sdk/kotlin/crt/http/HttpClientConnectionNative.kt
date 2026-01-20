@@ -91,74 +91,75 @@ private fun onResponseHeaders(
     headerArray: CPointer<aws_http_header>?,
     numHeaders: size_t,
     userdata: COpaquePointer?,
-): Int =
-    userdata?.withDereferenced<HttpStreamContext, _> { ctx ->
-        ctx.stream?.let { stream ->
-            val hdrCnt = numHeaders.toInt()
-            val headers: List<HttpHeader>? = if (hdrCnt > 0 && headerArray != null) {
-                val kheaders = mutableListOf<HttpHeader>()
-                for (i in 0 until hdrCnt) {
-                    val nativeHdr = headerArray[i]
-                    val hdr = HttpHeader(nativeHdr.name.toKString(), nativeHdr.value.toKString())
-                    kheaders.add(hdr)
-                }
-                kheaders
-            } else {
-                null
+): Int = userdata?.withDereferenced<HttpStreamContext, _> { ctx ->
+    ctx.stream?.let { stream ->
+        val hdrCnt = numHeaders.toInt()
+        val headers: List<HttpHeader>? = if (hdrCnt > 0 && headerArray != null) {
+            val kheaders = mutableListOf<HttpHeader>()
+            for (i in 0 until hdrCnt) {
+                val nativeHdr = headerArray[i]
+                val hdr = HttpHeader(nativeHdr.name.toKString(), nativeHdr.value.toKString())
+                kheaders.add(hdr)
             }
-
-            try {
-                ctx.handler.onResponseHeaders(stream, stream.responseStatusCode, blockType.value.toInt(), headers)
-                AWS_OP_SUCCESS
-            } catch (ex: Exception) {
-                log(LogLevel.Error, "onResponseHeaders: $ex")
-                null
-            }
+            kheaders
+        } else {
+            null
         }
-    } ?: callbackError()
+
+        try {
+            ctx.handler.onResponseHeaders(stream, stream.responseStatusCode, blockType.value.toInt(), headers)
+            AWS_OP_SUCCESS
+        } catch (ex: Exception) {
+            log(LogLevel.Error, "onResponseHeaders: $ex")
+            null
+        }
+    }
+} ?: callbackError()
 
 private fun onResponseHeaderBlockDone(
     nativeStream: CPointer<cnames.structs.aws_http_stream>?,
     blockType: aws_http_header_block,
     userdata: COpaquePointer?,
-): Int =
-    userdata?.withDereferenced<HttpStreamContext, _> { ctx ->
-        ctx.stream?.let { stream ->
-            try {
-                ctx.handler.onResponseHeadersDone(stream, blockType.value.toInt())
-                AWS_OP_SUCCESS
-            } catch (ex: Exception) {
-                log(LogLevel.Error, "onResponseHeaderBlockDone: $ex")
-                null
-            }
+): Int = userdata?.withDereferenced<HttpStreamContext, _> { ctx ->
+    ctx.stream?.let { stream ->
+        try {
+            ctx.handler.onResponseHeadersDone(stream, blockType.value.toInt())
+            AWS_OP_SUCCESS
+        } catch (ex: Exception) {
+            log(LogLevel.Error, "onResponseHeaderBlockDone: $ex")
+            null
         }
-    } ?: callbackError()
+    }
+} ?: callbackError()
 
 private fun onIncomingBody(
     nativeStream: CPointer<cnames.structs.aws_http_stream>?,
     data: CPointer<aws_byte_cursor>?,
     userdata: COpaquePointer?,
-): Int =
-    userdata?.withDereferenced<HttpStreamContext, _> { ctx ->
-        ctx.stream?.let { stream ->
-            try {
-                val body = if (data != null) ByteCursorBuffer(data) else Buffer.Empty
-                val windowIncrement = ctx.handler.onResponseBody(stream, body)
-
-                if (windowIncrement < 0) {
-                    null
-                } else {
-                    if (windowIncrement > 0) {
-                        aws_http_stream_update_window(nativeStream, windowIncrement.convert())
-                    }
-                    AWS_OP_SUCCESS
-                }
-            } catch (ex: Exception) {
-                log(LogLevel.Error, "onIncomingBody: $ex")
-                null
+): Int = userdata?.withDereferenced<HttpStreamContext, _> { ctx ->
+    ctx.stream?.let { stream ->
+        try {
+            val body = if (data != null) {
+                ByteCursorBuffer(data)
+            } else {
+                Buffer.Empty
             }
+            val windowIncrement = ctx.handler.onResponseBody(stream, body)
+
+            if (windowIncrement < 0) {
+                null
+            } else {
+                if (windowIncrement > 0) {
+                    aws_http_stream_update_window(nativeStream, windowIncrement.convert())
+                }
+                AWS_OP_SUCCESS
+            }
+        } catch (ex: Exception) {
+            log(LogLevel.Error, "onIncomingBody: $ex")
+            null
         }
-    } ?: callbackError()
+    }
+} ?: callbackError()
 
 private fun onStreamComplete(
     nativeStream: CPointer<cnames.structs.aws_http_stream>?,

@@ -12,8 +12,7 @@ private class CaseInsensitiveString(val s: String) {
     override fun toString(): String = s
 }
 
-private fun String.toInsensitive(): CaseInsensitiveString =
-    CaseInsensitiveString(this)
+private fun String.toInsensitive(): CaseInsensitiveString = CaseInsensitiveString(this)
 
 /**
  * Map of case-insensitive [String] to [Value]

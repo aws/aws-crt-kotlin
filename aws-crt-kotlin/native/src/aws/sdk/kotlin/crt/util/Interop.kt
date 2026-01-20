@@ -33,20 +33,19 @@ internal inline fun <T : Any, R> StableRef<T>.use(block: (StableRef<T>) -> R): R
 internal inline fun <reified T : Any, R> COpaquePointer.withDereferenced(
     dispose: Boolean = false,
     block: (T) -> R,
-): R? =
+): R? = try {
+    val stableRef = asStableRef<T>() // can throw NPE when target type can't be coerced to type arg
     try {
-        val stableRef = asStableRef<T>() // can throw NPE when target type can't be coerced to type arg
-        try {
-            val value = stableRef.get() // can throw NPE when pointer has been cleaned up by CRT
-            block(value)
-        } finally {
-            if (dispose) {
-                stableRef.dispose()
-            }
+        val value = stableRef.get() // can throw NPE when pointer has been cleaned up by CRT
+        block(value)
+    } finally {
+        if (dispose) {
+            stableRef.dispose()
         }
-    } catch (_: NullPointerException) {
-        null
     }
+} catch (_: NullPointerException) {
+    null
+}
 
 internal inline fun <reified T : Any> COpaquePointer.withDereferenced(
     dispose: Boolean = false,
