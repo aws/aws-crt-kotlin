@@ -12,6 +12,12 @@ import kotlinx.coroutines.sync.withLock
 import libcrt.*
 import platform.posix.atexit
 
+private val shutdownHandleManager = ShutdownHandleManager()
+private val handle = runBlocking { shutdownHandleManager.acquire() }
+private fun atexitHandler() {
+    runBlocking { CRT.releaseShutdownRef(handle) }
+}
+
 @OptIn(ExperimentalForeignApi::class)
 public actual object CRT {
     private var initialized = false
@@ -41,7 +47,7 @@ public actual object CRT {
 
             Logging.initialize(config)
             aws_register_log_subject_info_list(s_crt_log_subject_list.ptr)
-            atexit(staticCFunction(::cleanup))
+            atexit(staticCFunction(::atexitHandler))
 
             initialized = true
         }
@@ -73,7 +79,8 @@ public actual object CRT {
      * @param errorCode An error code returned from an exception or other native call.
      * @return A boolean representing whether this error is retryable or not.
      */
-    public actual fun isHttpErrorRetryable(errorCode: Int): Boolean = // see https://github.com/awslabs/aws-crt-java/blob/v0.29.10/src/native/http_request_response.c#L792
+    public actual fun isHttpErrorRetryable(errorCode: Int): Boolean =
+        // see https://github.com/awslabs/aws-crt-java/blob/v0.29.10/src/native/http_request_response.c#L792
         when (errorCode.toUInt()) {
             AWS_ERROR_HTTP_HEADER_NOT_FOUND,
             AWS_ERROR_HTTP_INVALID_HEADER_FIELD,
@@ -89,7 +96,6 @@ public actual object CRT {
             AWS_ERROR_HTTP_STREAM_MANAGER_SHUTTING_DOWN,
             AWS_HTTP2_ERR_CANCEL,
             -> false
-
             else -> true
         }
 
@@ -97,10 +103,27 @@ public actual object CRT {
      * @return The number of bytes allocated in native resources. If aws.crt.memory.tracing is 1 or 2, this will
      * be a non-zero value. Otherwise, no tracing will be done, and the value will always be 0
      */
-    public actual fun nativeMemory(): Long = if (CrtDebug.traceLevel > 0) {
-        aws_mem_tracer_bytes(Allocator.Default).convert<Long>()
-    } else {
-        0
+    public actual fun nativeMemory(): Long =
+        if (CrtDebug.traceLevel > 0) {
+            aws_mem_tracer_bytes(Allocator.Default).convert<Long>()
+        } else {
+            0
+        }
+
+    public actual suspend fun acquireShutdownRef(): CrtShutdownHandle = shutdownHandleManager.acquire().also {
+        log(LogLevel.Trace, "Vending CRT shutdown handle $it")
+    }
+
+    public actual suspend fun releaseShutdownRef(handle: CrtShutdownHandle) {
+        if (shutdownHandleManager.release(handle)) {
+            log(LogLevel.Trace, "Released CRT shutdown handle $handle")
+        } else {
+            log(LogLevel.Warn, "CRT shutdown handle $handle does not exist and may have already been released!")
+        }
+
+        if (!shutdownHandleManager.hasActiveHandles) {
+            cleanup()
+        }
     }
 }
 
