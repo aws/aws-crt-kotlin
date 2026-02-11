@@ -128,5 +128,5 @@ private fun onWriteChunkComplete(
 private fun cleanupWriteChunkCbData(req: WriteChunkRequest) {
     aws_input_stream_destroy(req.inputStream)
     aws_byte_buf_clean_up(req.chunkData)
-    Allocator.Default.free(req.inputStream)
+    Allocator.Default.free(req.chunkData)
 }
