@@ -58,6 +58,7 @@ internal class HttpClientConnectionNative(
     override fun close() {
         if (closed.compareAndSet(false, true)) {
             manager.releaseConnection(this)
+            aws_http_connection_release(ptr)
         }
     }
 }
