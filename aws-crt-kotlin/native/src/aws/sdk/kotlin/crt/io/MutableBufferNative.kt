@@ -34,11 +34,11 @@ public actual class MutableBuffer private constructor(
      */
     public actual fun write(src: ByteArray, offset: Int, length: Int): Int {
         val wc = minOf(length, writeRemaining)
-        
+
         if (wc == 0 || src.isEmpty()) {
             return 0
         }
-        
+
         src.usePinned { pinnedSrc ->
             val offsetPinnedSrc = pinnedSrc.addressOf(offset).reinterpret<UByteVar>()
             return if (aws_byte_buf_write(buffer.pointer, offsetPinnedSrc, wc.convert())) wc else 0
