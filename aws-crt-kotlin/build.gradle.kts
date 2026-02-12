@@ -5,7 +5,7 @@
 import aws.sdk.kotlin.gradle.crt.CMakeBuildType
 import aws.sdk.kotlin.gradle.crt.cmakeInstallDir
 import aws.sdk.kotlin.gradle.crt.configureCrtCMakeBuild
-import aws.sdk.kotlin.gradle.dsl.configurePublishing
+import aws.sdk.kotlin.gradle.publishing.configurePublishing
 import aws.sdk.kotlin.gradle.kmp.NATIVE_ENABLED
 import aws.sdk.kotlin.gradle.kmp.configureIosSimulatorTasks
 import aws.sdk.kotlin.gradle.kmp.configureKmpTargets
