@@ -120,6 +120,16 @@ internal fun inputStream(khandler: HttpRequestBodyStream): CPointer<aws_input_st
     val impl = RequestBodyStream(khandler)
     val stableRef = StableRef.create(impl)
     stream.impl = stableRef.asCPointer()
+    
+    // Initialize the ref_count - this is critical!
+    // https://github.com/awslabs/aws-c-io/blob/main/include/aws/io/stream.h#L58-L59
+    aws_ref_count_init(stream.ref_count.ptr, stream.ptr, staticCFunction { ptr: COpaquePointer? ->
+        ptr?.reinterpret<aws_input_stream>()?.let { s ->
+            Allocator.Default.free(s)
+        }
+        Unit
+    })
+    
     return stream.ptr
 }
 
