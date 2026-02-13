@@ -26,12 +26,6 @@ internal class HttpStreamNative(
 
     private val closed = atomic(false)
 
-    init {
-        // Acquire a reference for this wrapper. CRT holds its own reference which it releases
-        // after on_complete callback. We must release our own reference when close() is called.
-        aws_http_stream_acquire(ptr)
-    }
-
     override val responseStatusCode: Int
         get() {
             return memScoped {
