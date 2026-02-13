@@ -122,7 +122,7 @@ internal fun inputStream(khandler: HttpRequestBodyStream): CPointer<aws_input_st
     stream.impl = stableRef.asCPointer()
 
     // Initialize the ref_count - this is critical!
-    // https://github.com/awslabs/aws-c-io/blob/main/include/aws/io/stream.h#L58-L59
+    // https://github.com/awslabs/aws-c-io/blob/bfb0819d3906502483611ce832a5ec6b897c8421/include/aws/io/stream.h#L58-L59
     aws_ref_count_init(
         stream.ref_count.ptr,
         stream.ptr,
