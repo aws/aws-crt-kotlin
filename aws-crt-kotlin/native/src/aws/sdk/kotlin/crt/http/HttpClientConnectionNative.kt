@@ -43,7 +43,7 @@ internal class HttpClientConnectionNative(
         val stream = aws_http_connection_make_request(ptr, reqOptions)
 
         if (stream == null) {
-            aws_http_message_destroy(nativeReq)
+            aws_http_message_release(nativeReq)
             stableRef.dispose()
             throw CrtRuntimeException("aws_http_connection_make_request()")
         }
@@ -227,7 +227,7 @@ internal fun HttpRequest.toNativeRequest(): CPointer<cnames.structs.aws_http_mes
         val bodyStream = body?.let { inputStream(it) }
         aws_http_message_set_body_stream(nativeReq, bodyStream)
     } catch (ex: Exception) {
-        aws_http_message_destroy(nativeReq)
+        aws_http_message_release(nativeReq)
         throw ex
     }
 
