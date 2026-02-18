@@ -24,6 +24,8 @@ internal class HttpClientConnectionNative(
     private val closed = atomic(false)
 
     override val id: String = ptr.rawValue.toString()
+    override val version: HttpVersion = HttpVersion.fromInt(aws_http_connection_get_version(ptr).value.toInt())
+
     override fun makeRequest(httpReq: HttpRequest, handler: HttpStreamResponseHandler): HttpStream {
         val nativeReq = httpReq.toNativeRequest()
         val cbData = HttpStreamContext(null, handler, nativeReq)
