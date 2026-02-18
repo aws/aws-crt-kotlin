@@ -17,7 +17,7 @@ class Http2StreamManagerOptionsTest : CrtTest() {
         val elg = EventLoopGroup()
         val hr = HostResolver(elg)
         val clientBootstrap = ClientBootstrap(elg, hr)
-        
+
         try {
             val options = Http2StreamManagerOptions.build {
                 connectionManagerOptions = HttpClientConnectionManagerOptions.build {
@@ -60,9 +60,9 @@ class Http2StreamManagerOptionsTest : CrtTest() {
         builder.initialWindowSize(65535)
         builder.maxConcurrentStreams(100)
         builder.maxFrameSize(16384)
-        
+
         val settings = builder.build()
-        
+
         assertEquals(4, settings.size)
         assertEquals(Http2SettingId.ENABLE_PUSH, settings[0].id)
         assertEquals(0, settings[0].value)

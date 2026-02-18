@@ -85,8 +85,7 @@ public class Http2StreamManagerOptions internal constructor(builder: Http2Stream
         public const val DEFAULT_MAX_CONCURRENT_STREAMS: Int = Int.MAX_VALUE
         public const val DEFAULT_CONNECTION_PING_TIMEOUT_MS: Int = 3000
 
-        public fun build(block: Http2StreamManagerOptionsBuilder.() -> Unit): Http2StreamManagerOptions =
-            Http2StreamManagerOptionsBuilder().apply(block).build()
+        public fun build(block: Http2StreamManagerOptionsBuilder.() -> Unit): Http2StreamManagerOptions = Http2StreamManagerOptionsBuilder().apply(block).build()
     }
 }
 

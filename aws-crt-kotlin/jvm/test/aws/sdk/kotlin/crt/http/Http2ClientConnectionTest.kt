@@ -23,13 +23,13 @@ import kotlin.test.assertTrue
 class Http2ClientConnectionTest : CrtTest() {
     private lateinit var mockServer: MockWebServer
     private lateinit var serverCert: HeldCertificate
-    
+
     @BeforeEach
     fun setup() {
         serverCert = HeldCertificate.Builder()
             .commonName("localhost")
             .build()
-        
+
         val serverCertificates = HandshakeCertificates.Builder()
             .heldCertificate(serverCert)
             .build()
@@ -39,31 +39,33 @@ class Http2ClientConnectionTest : CrtTest() {
         mockServer.protocols = listOf(Protocol.HTTP_2, Protocol.HTTP_1_1)
         mockServer.start()
     }
-    
+
     @AfterEach
     fun teardown() {
         mockServer.close()
     }
-    
+
     @Test
     fun testHttp2Request() = runBlocking {
         mockServer.enqueue(
             MockResponse.Builder()
                 .code(200)
                 .body("Hello HTTP/2")
-                .build()
+                .build(),
         )
-        
+
         val uri = Uri.parse("https://localhost:${mockServer.port}")
-        
+
         val elg = EventLoopGroup()
         val hr = HostResolver(elg)
         val clientBootstrap = ClientBootstrap(elg, hr)
-        
-        val tlsContext = TlsContext(TlsContextOptions.build {
-            alpn = "h2;http/1.1"
-            verifyPeer = false
-        })
+
+        val tlsContext = TlsContext(
+            TlsContextOptions.build {
+                alpn = "h2;http/1.1"
+                verifyPeer = false
+            },
+        )
 
         try {
             val connOptions = HttpClientConnectionManagerOptions.build {
@@ -77,11 +79,11 @@ class Http2ClientConnectionTest : CrtTest() {
             val connManager = HttpClientConnectionManager(connOptions)
             try {
                 val conn = connManager.acquireConnection()
-                
+
                 // Confirm we got an HTTP/2 connection
                 assertTrue(conn is Http2ClientConnection, "Expected HTTP/2 connection but got ${conn::class.simpleName}")
                 assertEquals(HttpVersion.HTTP_2, conn.version, "Connection version should be HTTP/2")
-                
+
                 val request = Http2Request.build {
                     method = "GET"
                     encodedPath = "/"
@@ -96,7 +98,7 @@ class Http2ClientConnectionTest : CrtTest() {
                 val responseFuture = CompletableFuture<Int>()
                 val bodyFuture = CompletableFuture<String>()
                 val bodyBuilder = StringBuilder()
-                
+
                 val handler = object : HttpStreamResponseHandler {
                     override fun onResponseHeaders(
                         stream: HttpStreamBase,
@@ -106,7 +108,7 @@ class Http2ClientConnectionTest : CrtTest() {
                     ) {
                         responseFuture.complete(responseStatusCode)
                     }
-                    
+
                     override fun onResponseBody(stream: HttpStreamBase, bodyBytesIn: Buffer): Int {
                         bodyBuilder.append(String(bodyBytesIn.readAll()))
                         return bodyBytesIn.len
@@ -123,10 +125,10 @@ class Http2ClientConnectionTest : CrtTest() {
 
                 val statusCode = responseFuture.get()
                 val body = bodyFuture.get()
-                
+
                 assertEquals(200, statusCode, "Expected 200 status code")
                 assertEquals("Hello HTTP/2", body, "Expected response body")
-                
+
                 // Verify the server received the request
                 val recordedRequest = mockServer.takeRequest()
                 assertEquals("GET", recordedRequest.method)

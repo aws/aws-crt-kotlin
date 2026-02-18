@@ -13,7 +13,8 @@ import software.amazon.awssdk.crt.http.Http2StreamManager as Http2StreamManagerJ
  */
 public actual class Http2StreamManager actual constructor(
     public actual val options: Http2StreamManagerOptions,
-) : aws.sdk.kotlin.crt.Closeable, aws.sdk.kotlin.crt.AsyncShutdown {
+) : aws.sdk.kotlin.crt.Closeable,
+    aws.sdk.kotlin.crt.AsyncShutdown {
 
     private val jniManager: Http2StreamManagerJni = Http2StreamManagerJni.create(options.toJni())
 

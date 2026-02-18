@@ -10,9 +10,9 @@ import aws.sdk.kotlin.crt.io.*
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
-import okhttp3.Protocol
 import mockwebserver3.MockResponse
 import mockwebserver3.MockWebServer
+import okhttp3.Protocol
 import okhttp3.tls.HandshakeCertificates
 import okhttp3.tls.HeldCertificate
 import org.junit.jupiter.api.AfterEach
@@ -54,7 +54,7 @@ class Http2StreamManagerTest : CrtTest() {
             MockResponse.Builder()
                 .code(200)
                 .body("Hello from stream manager")
-                .build()
+                .build(),
         )
 
         val uri = Uri.parse("https://localhost:${mockServer.port}")
@@ -63,22 +63,26 @@ class Http2StreamManagerTest : CrtTest() {
         val hr = HostResolver(elg)
         val clientBootstrap = ClientBootstrap(elg, hr)
 
-        val tlsContext = TlsContext(TlsContextOptions.build {
-            alpn = "h2;http/1.1"
-            verifyPeer = false
-        })
+        val tlsContext = TlsContext(
+            TlsContextOptions.build {
+                alpn = "h2;http/1.1"
+                verifyPeer = false
+            },
+        )
 
         try {
-            val streamManager = Http2StreamManager(Http2StreamManagerOptions.build {
-                connectionManagerOptions = HttpClientConnectionManagerOptions.build {
-                    this.uri = uri
-                    this.clientBootstrap = clientBootstrap
-                    this.socketOptions = SocketOptions()
-                    this.tlsContext = tlsContext
-                    this.maxConnections = 2
-                }
-                idealConcurrentStreamsPerConnection = 100
-            })
+            val streamManager = Http2StreamManager(
+                Http2StreamManagerOptions.build {
+                    connectionManagerOptions = HttpClientConnectionManagerOptions.build {
+                        this.uri = uri
+                        this.clientBootstrap = clientBootstrap
+                        this.socketOptions = SocketOptions()
+                        this.tlsContext = tlsContext
+                        this.maxConnections = 2
+                    }
+                    idealConcurrentStreamsPerConnection = 100
+                },
+            )
 
             try {
                 val request = Http2Request.build {
@@ -150,7 +154,7 @@ class Http2StreamManagerTest : CrtTest() {
                 MockResponse.Builder()
                     .code(200)
                     .body("Response $it")
-                    .build()
+                    .build(),
             )
         }
 
@@ -160,22 +164,26 @@ class Http2StreamManagerTest : CrtTest() {
         val hr = HostResolver(elg)
         val clientBootstrap = ClientBootstrap(elg, hr)
 
-        val tlsContext = TlsContext(TlsContextOptions.build {
-            alpn = "h2;http/1.1"
-            verifyPeer = false
-        })
+        val tlsContext = TlsContext(
+            TlsContextOptions.build {
+                alpn = "h2;http/1.1"
+                verifyPeer = false
+            },
+        )
 
         try {
-            val streamManager = Http2StreamManager(Http2StreamManagerOptions.build {
-                connectionManagerOptions = HttpClientConnectionManagerOptions.build {
-                    this.uri = uri
-                    this.clientBootstrap = clientBootstrap
-                    this.socketOptions = SocketOptions()
-                    this.tlsContext = tlsContext
-                    this.maxConnections = 1
-                }
-                idealConcurrentStreamsPerConnection = 100
-            })
+            val streamManager = Http2StreamManager(
+                Http2StreamManagerOptions.build {
+                    connectionManagerOptions = HttpClientConnectionManagerOptions.build {
+                        this.uri = uri
+                        this.clientBootstrap = clientBootstrap
+                        this.socketOptions = SocketOptions()
+                        this.tlsContext = tlsContext
+                        this.maxConnections = 1
+                    }
+                    idealConcurrentStreamsPerConnection = 100
+                },
+            )
 
             try {
                 val requests = (0 until numRequests).map { idx ->

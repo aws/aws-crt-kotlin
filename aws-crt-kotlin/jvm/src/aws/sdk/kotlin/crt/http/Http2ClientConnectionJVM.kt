@@ -15,8 +15,7 @@ internal class Http2ClientConnectionJVM(private val jniConn: Http2ClientConnecti
     override val id: String = jniConn.nativeHandle.toString()
     override val version: HttpVersion = HttpVersion.fromInt(jniConn.version.value)
 
-    override fun makeRequest(httpReq: HttpRequest, handler: HttpStreamResponseHandler): HttpStreamBase =
-        Http2StreamJVM(jniConn.makeRequest(httpReq.into(), handler.asJniStreamBaseResponseHandler()))
+    override fun makeRequest(httpReq: HttpRequest, handler: HttpStreamResponseHandler): HttpStreamBase = Http2StreamJVM(jniConn.makeRequest(httpReq.into(), handler.asJniStreamBaseResponseHandler()))
 
     override fun makeRequest(request: Http2Request, handler: HttpStreamResponseHandler): Http2Stream {
         val jniStream = jniConn.makeRequest(request.toJni(), handler.asJniStreamBaseResponseHandler())
@@ -27,8 +26,7 @@ internal class Http2ClientConnectionJVM(private val jniConn: Http2ClientConnecti
         jniConn.updateSettings(settings.toJni()).await()
     }
 
-    override suspend fun sendPing(pingData: ByteArray?): Long =
-        jniConn.sendPing(pingData).await()
+    override suspend fun sendPing(pingData: ByteArray?): Long = jniConn.sendPing(pingData).await()
 
     override fun sendGoAway(errorCode: Http2ErrorCode, allowMoreStreams: Boolean, debugData: ByteArray?) {
         jniConn.sendGoAway(errorCode.toJni(), allowMoreStreams, debugData)

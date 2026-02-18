@@ -14,7 +14,9 @@ import aws.sdk.kotlin.crt.Closeable
  *
  * This is the recommended way to use HTTP/2 for high-throughput scenarios.
  */
-public expect class Http2StreamManager(options: Http2StreamManagerOptions) : Closeable, AsyncShutdown {
+public expect class Http2StreamManager(options: Http2StreamManagerOptions) :
+    Closeable,
+    AsyncShutdown {
     /**
      * The options this manager was configured with
      */

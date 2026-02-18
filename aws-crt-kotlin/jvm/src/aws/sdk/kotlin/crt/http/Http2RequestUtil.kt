@@ -27,36 +27,34 @@ internal fun Http2Request.toJni(): Http2RequestJni {
 /**
  * Convert Kotlin Http2ConnectionSetting list to JNI format
  */
-internal fun List<Http2ConnectionSetting>.toJni(): List<Http2ConnectionSettingJni> =
-    map { Http2ConnectionSettingJni(Http2ConnectionSettingJni.ID.entries[it.id.ordinal], it.value) }
+internal fun List<Http2ConnectionSetting>.toJni(): List<Http2ConnectionSettingJni> = map { Http2ConnectionSettingJni(Http2ConnectionSettingJni.ID.entries[it.id.ordinal], it.value) }
 
 /**
  * Convert Kotlin Http2ErrorCode to JNI Http2ErrorCode
  */
-internal fun Http2ErrorCode.toJni(): Http2ClientConnectionJni.Http2ErrorCode =
-    Http2ClientConnectionJni.Http2ErrorCode.entries[this.ordinal]
+internal fun Http2ErrorCode.toJni(): Http2ClientConnectionJni.Http2ErrorCode = Http2ClientConnectionJni.Http2ErrorCode.entries[this.ordinal]
 
 /**
  * Convert Kotlin Http2StreamManagerOptions to JNI Http2StreamManagerOptions
  */
 internal fun Http2StreamManagerOptions.toJni(): software.amazon.awssdk.crt.http.Http2StreamManagerOptions {
     val jniOptions = software.amazon.awssdk.crt.http.Http2StreamManagerOptions()
-    
+
     jniOptions.withConnectionManagerOptions(connectionManagerOptions.into())
         .withIdealConcurrentStreamsPerConnection(idealConcurrentStreamsPerConnection)
         .withMaxConcurrentStreamsPerConnection(maxConcurrentStreamsPerConnection)
         .withConnectionManualWindowManagement(connectionManualWindowManagement)
         .withPriorKnowledge(priorKnowledge)
         .withCloseConnectionOnServerError(closeConnectionOnServerError)
-    
+
     if (initialSettings.isNotEmpty()) {
         jniOptions.withInitialSettingsList(initialSettings.toJni())
     }
-    
+
     if (connectionPingPeriodMs > 0) {
         jniOptions.withConnectionPing(connectionPingPeriodMs, connectionPingTimeoutMs)
     }
-    
+
     return jniOptions
 }
 
@@ -83,7 +81,9 @@ internal fun HttpStreamResponseHandler.asJniStreamBaseResponseHandler(): HttpStr
         }
 
         override fun onResponseBody(stream: HttpStreamBaseJni, bodyBytesIn: ByteArray?): Int {
-            if (bodyBytesIn == null) return 0
+            if (bodyBytesIn == null) {
+                return 0
+            }
             val ktStream = Http2StreamJVM(stream as software.amazon.awssdk.crt.http.Http2Stream)
             val buffer = aws.sdk.kotlin.crt.io.byteArrayBuffer(bodyBytesIn)
             return handler.onResponseBody(ktStream, buffer)
