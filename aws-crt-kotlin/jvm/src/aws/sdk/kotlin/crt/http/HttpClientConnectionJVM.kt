@@ -12,8 +12,9 @@ import software.amazon.awssdk.crt.http.HttpClientConnection as HttpClientConnect
  */
 internal class HttpClientConnectionJVM constructor(internal val jniConn: HttpClientConnectionJni) : HttpClientConnection {
     override val id: String = jniConn.nativeHandle.toString()
+    override val version: HttpVersion = HttpVersion.fromInt(jniConn.version.value)
 
-    override fun makeRequest(httpReq: HttpRequest, handler: HttpStreamResponseHandler): HttpStream {
+    override fun makeRequest(httpReq: HttpRequest, handler: HttpStreamResponseHandler): HttpStreamBase {
         val jniStream = jniConn.makeRequest(httpReq.into(), handler.asJniStreamResponseHandler())
         return HttpStreamJVM(jniStream)
     }

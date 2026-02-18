@@ -138,7 +138,7 @@ private class HttpTestResponseHandler : HttpStreamResponseHandler {
     private var body: ByteArray? = null
 
     override fun onResponseHeaders(
-        stream: HttpStream,
+        stream: HttpStreamBase,
         responseStatusCode: Int,
         blockType: Int,
         nextHeaders: List<HttpHeader>?,
@@ -151,7 +151,7 @@ private class HttpTestResponseHandler : HttpStreamResponseHandler {
         }
     }
 
-    override fun onResponseBody(stream: HttpStream, bodyBytesIn: Buffer): Int {
+    override fun onResponseBody(stream: HttpStreamBase, bodyBytesIn: Buffer): Int {
         val incoming = bodyBytesIn.readAll()
 
         // not really concerned with how efficient this is right now...
@@ -164,7 +164,7 @@ private class HttpTestResponseHandler : HttpStreamResponseHandler {
         return incoming.size
     }
 
-    override fun onResponseComplete(stream: HttpStream, errorCode: Int) {
+    override fun onResponseComplete(stream: HttpStreamBase, errorCode: Int) {
         stream.close()
         check(streamDone.trySend(errorCode).isSuccess)
         streamDone.close()

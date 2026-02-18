@@ -63,6 +63,8 @@ kotlin {
             dependencies {
                 implementation(libs.kotlinx.coroutines.debug)
                 implementation(libs.mockserver.netty)
+                implementation(libs.okhttp.mockwebserver)
+                implementation(libs.okhttp.tls)
             }
         }
     }
