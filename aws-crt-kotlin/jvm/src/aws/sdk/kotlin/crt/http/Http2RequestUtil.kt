@@ -10,6 +10,8 @@ import software.amazon.awssdk.crt.http.Http2Request as Http2RequestJni
 import software.amazon.awssdk.crt.http.HttpHeader as HttpHeaderJni
 import software.amazon.awssdk.crt.http.HttpStreamBase as HttpStreamBaseJni
 import software.amazon.awssdk.crt.http.HttpStreamBaseResponseHandler as HttpStreamBaseResponseHandlerJni
+import software.amazon.awssdk.crt.http.Http2StreamManagerOptions as Http2StreamManagerOptionsJni
+import software.amazon.awssdk.crt.http.HttpStreamMetrics as HttpStreamMetricsJni
 
 /**
  * Convert Kotlin HttpRequest to JNI Http2Request for HTTP/2 connections
@@ -31,8 +33,8 @@ internal fun List<Http2ConnectionSetting>.toJni(): List<Http2ConnectionSettingJn
 /**
  * Convert Kotlin Http2StreamManagerOptions to JNI Http2StreamManagerOptions
  */
-internal fun Http2StreamManagerOptions.toJni(): software.amazon.awssdk.crt.http.Http2StreamManagerOptions {
-    val jniOptions = software.amazon.awssdk.crt.http.Http2StreamManagerOptions()
+internal fun Http2StreamManagerOptions.toJni(): Http2StreamManagerOptionsJni {
+    val jniOptions = Http2StreamManagerOptionsJni()
 
     jniOptions.withConnectionManagerOptions(connectionManagerOptions.into())
         .withIdealConcurrentStreamsPerConnection(idealConcurrentStreamsPerConnection)
@@ -88,7 +90,7 @@ internal fun HttpStreamResponseHandler.asJniStreamBaseResponseHandler(): HttpStr
             handler.onResponseComplete(ktStream, errorCode)
         }
 
-        override fun onMetrics(stream: HttpStreamBaseJni, metrics: software.amazon.awssdk.crt.http.HttpStreamMetrics) {
+        override fun onMetrics(stream: HttpStreamBaseJni, metrics: HttpStreamMetricsJni) {
             val ktStream = HttpStreamJVM(stream)
             handler.onMetrics(ktStream, metrics.toKotlin())
         }
