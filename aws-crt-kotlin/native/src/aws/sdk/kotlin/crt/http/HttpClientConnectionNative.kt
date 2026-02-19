@@ -27,7 +27,11 @@ internal class HttpClientConnectionNative(
     override val version: HttpVersion = HttpVersion.fromInt(aws_http_connection_get_version(ptr).value.toInt())
 
     override fun makeRequest(httpReq: HttpRequest, handler: HttpStreamResponseHandler): HttpStream {
-        val nativeReq = httpReq.toNativeRequest()
+        val nativeReq = if (version == HttpVersion.HTTP_2) {
+            httpReq.toHttp2NativeRequest()
+        } else {
+            httpReq.toNativeRequest()
+        }
         val cbData = HttpStreamContext(null, handler, nativeReq)
         val stableRef = StableRef.create(cbData)
         val reqOptions = cValue<aws_http_make_request_options> {
