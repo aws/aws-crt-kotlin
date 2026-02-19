@@ -85,7 +85,7 @@ class Http2StreamManagerTest : CrtTest() {
             )
 
             try {
-                val request = Http2Request.build {
+                val request = HttpRequest.build {
                     method = "GET"
                     encodedPath = "/"
                     headers {
@@ -102,7 +102,7 @@ class Http2StreamManagerTest : CrtTest() {
 
                 val handler = object : HttpStreamResponseHandler {
                     override fun onResponseHeaders(
-                        stream: HttpStreamBase,
+                        stream: HttpStream,
                         responseStatusCode: Int,
                         blockType: Int,
                         nextHeaders: List<HttpHeader>?,
@@ -110,12 +110,12 @@ class Http2StreamManagerTest : CrtTest() {
                         responseFuture.complete(responseStatusCode)
                     }
 
-                    override fun onResponseBody(stream: HttpStreamBase, bodyBytesIn: Buffer): Int {
+                    override fun onResponseBody(stream: HttpStream, bodyBytesIn: Buffer): Int {
                         bodyBuilder.append(String(bodyBytesIn.readAll()))
                         return bodyBytesIn.len
                     }
 
-                    override fun onResponseComplete(stream: HttpStreamBase, errorCode: Int) {
+                    override fun onResponseComplete(stream: HttpStream, errorCode: Int) {
                         bodyFuture.complete(bodyBuilder.toString())
                         stream.close()
                     }
@@ -188,7 +188,7 @@ class Http2StreamManagerTest : CrtTest() {
             try {
                 val requests = (0 until numRequests).map { idx ->
                     async {
-                        val request = Http2Request.build {
+                        val request = HttpRequest.build {
                             method = "GET"
                             encodedPath = "/request-$idx"
                             headers {
@@ -203,7 +203,7 @@ class Http2StreamManagerTest : CrtTest() {
 
                         val handler = object : HttpStreamResponseHandler {
                             override fun onResponseHeaders(
-                                stream: HttpStreamBase,
+                                stream: HttpStream,
                                 responseStatusCode: Int,
                                 blockType: Int,
                                 nextHeaders: List<HttpHeader>?,
@@ -211,7 +211,7 @@ class Http2StreamManagerTest : CrtTest() {
                                 responseFuture.complete(responseStatusCode)
                             }
 
-                            override fun onResponseComplete(stream: HttpStreamBase, errorCode: Int) {
+                            override fun onResponseComplete(stream: HttpStream, errorCode: Int) {
                                 stream.close()
                             }
                         }

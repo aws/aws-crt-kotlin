@@ -23,7 +23,7 @@ public interface HttpStreamResponseHandler {
      * @param nextHeaders The headers received in the latest IO event.
      */
     public fun onResponseHeaders(
-        stream: HttpStreamBase,
+        stream: HttpStream,
         responseStatusCode: Int,
         blockType: Int,
         nextHeaders: List<HttpHeader>?,
@@ -36,7 +36,7 @@ public interface HttpStreamResponseHandler {
      * @param stream The HttpStreamBase object
      * @param blockType The type of the header block, corresponds to [HttpHeaderBlock]
      */
-    public fun onResponseHeadersDone(stream: HttpStreamBase, blockType: Int) {
+    public fun onResponseHeadersDone(stream: HttpStream, blockType: Int) {
         /* Optional Callback, do nothing by default */
     }
 
@@ -62,7 +62,7 @@ public interface HttpStreamResponseHandler {
      * @return The number of bytes to move the sliding window by. Repeatedly returning zero will eventually cause the
      * sliding window to fill up and data to stop flowing until the user slides the window back open.
      */
-    public fun onResponseBody(stream: HttpStreamBase, bodyBytesIn: Buffer): Int = /* Optional Callback, ignore incoming response body by default unless user wants to capture it. */
+    public fun onResponseBody(stream: HttpStream, bodyBytesIn: Buffer): Int = /* Optional Callback, ignore incoming response body by default unless user wants to capture it. */
         // FIXME - do we want to follow this pattern or just have a single way of incrementing the
         // window size through `Stream.incrementWindow()`?
         bodyBytesIn.len
@@ -72,7 +72,7 @@ public interface HttpStreamResponseHandler {
      * @param stream The HTTP stream to which the metrics apply
      * @param metrics The [HttpStreamMetrics] containing metrics for the given stream
      */
-    public fun onMetrics(stream: HttpStreamBase, metrics: HttpStreamMetrics) {
+    public fun onMetrics(stream: HttpStream, metrics: HttpStreamMetrics) {
         /* Optional callback, nothing to do by default */
     }
 
@@ -81,5 +81,5 @@ public interface HttpStreamResponseHandler {
      * @param stream completed stream
      * @param errorCode resultant errorCode for the response
      */
-    public fun onResponseComplete(stream: HttpStreamBase, errorCode: Int)
+    public fun onResponseComplete(stream: HttpStream, errorCode: Int)
 }

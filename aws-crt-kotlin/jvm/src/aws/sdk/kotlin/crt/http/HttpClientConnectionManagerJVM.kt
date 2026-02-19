@@ -41,13 +41,7 @@ public actual class HttpClientConnectionManager actual constructor(
     public actual suspend fun acquireConnection(): HttpClientConnection {
         val connFuture = jniManager.acquireConnection()
         val jniConn = connFuture.await()
-        return when (jniConn.version) {
-            software.amazon.awssdk.crt.http.HttpVersion.HTTP_2 ->
-                Http2ClientConnectionJVM(jniConn as software.amazon.awssdk.crt.http.Http2ClientConnection)
-
-            else ->
-                HttpClientConnectionJVM(jniConn)
-        }
+        return HttpClientConnectionJVM(jniConn)
     }
 
     /**

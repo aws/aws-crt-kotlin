@@ -12,9 +12,9 @@ public actual class Http2StreamManager actual constructor(options: Http2StreamMa
         get() = TODO("Not yet implemented")
 
     public actual suspend fun acquireStream(
-        request: Http2Request,
+        request: HttpRequest,
         handler: HttpStreamResponseHandler,
-    ): Http2Stream {
+    ): HttpStream {
         TODO("Not yet implemented")
     }
 

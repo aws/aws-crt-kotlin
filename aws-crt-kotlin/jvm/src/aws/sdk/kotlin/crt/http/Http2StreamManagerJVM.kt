@@ -29,11 +29,11 @@ public actual class Http2StreamManager actual constructor(
         }
 
     public actual suspend fun acquireStream(
-        request: Http2Request,
+        request: HttpRequest,
         handler: HttpStreamResponseHandler,
-    ): Http2Stream {
-        val jniStream = jniManager.acquireStream(request.toJni(), handler.asJniStreamBaseResponseHandler()).await()
-        return Http2StreamJVM(jniStream)
+    ): HttpStream {
+        val jniStream = jniManager.acquireStream(request.toHttp2Jni(), handler.asJniStreamBaseResponseHandler()).await()
+        return HttpStreamJVM(jniStream)
     }
 
     actual override fun close() {

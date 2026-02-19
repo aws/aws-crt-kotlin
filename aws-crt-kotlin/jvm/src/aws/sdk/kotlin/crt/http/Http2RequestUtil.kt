@@ -5,7 +5,6 @@
 
 package aws.sdk.kotlin.crt.http
 
-import software.amazon.awssdk.crt.http.Http2ClientConnection as Http2ClientConnectionJni
 import software.amazon.awssdk.crt.http.Http2ConnectionSetting as Http2ConnectionSettingJni
 import software.amazon.awssdk.crt.http.Http2Request as Http2RequestJni
 import software.amazon.awssdk.crt.http.HttpHeader as HttpHeaderJni
@@ -13,9 +12,9 @@ import software.amazon.awssdk.crt.http.HttpStreamBase as HttpStreamBaseJni
 import software.amazon.awssdk.crt.http.HttpStreamBaseResponseHandler as HttpStreamBaseResponseHandlerJni
 
 /**
- * Convert Kotlin Http2Request to JNI Http2Request
+ * Convert Kotlin HttpRequest to JNI Http2Request for HTTP/2 connections
  */
-internal fun Http2Request.toJni(): Http2RequestJni {
+internal fun HttpRequest.toHttp2Jni(): Http2RequestJni {
     val jniHeaders = headers.entries()
         .flatMap { entry -> entry.value.map { HttpHeaderJni(entry.key, it) } }
         .toTypedArray()
@@ -28,11 +27,6 @@ internal fun Http2Request.toJni(): Http2RequestJni {
  * Convert Kotlin Http2ConnectionSetting list to JNI format
  */
 internal fun List<Http2ConnectionSetting>.toJni(): List<Http2ConnectionSettingJni> = map { Http2ConnectionSettingJni(Http2ConnectionSettingJni.ID.entries[it.id.ordinal], it.value) }
-
-/**
- * Convert Kotlin Http2ErrorCode to JNI Http2ErrorCode
- */
-internal fun Http2ErrorCode.toJni(): Http2ClientConnectionJni.Http2ErrorCode = Http2ClientConnectionJni.Http2ErrorCode.entries[this.ordinal]
 
 /**
  * Convert Kotlin Http2StreamManagerOptions to JNI Http2StreamManagerOptions
@@ -71,12 +65,12 @@ internal fun HttpStreamResponseHandler.asJniStreamBaseResponseHandler(): HttpStr
             headers: Array<out HttpHeaderJni>?,
         ) {
             val ktHeaders = headers?.map { HttpHeader(it.name, it.value) }
-            val ktStream = Http2StreamJVM(stream as software.amazon.awssdk.crt.http.Http2Stream)
+            val ktStream = HttpStreamJVM(stream)
             handler.onResponseHeaders(ktStream, statusCode, blockType, ktHeaders)
         }
 
         override fun onResponseHeadersDone(stream: HttpStreamBaseJni, blockType: Int) {
-            val ktStream = Http2StreamJVM(stream as software.amazon.awssdk.crt.http.Http2Stream)
+            val ktStream = HttpStreamJVM(stream)
             handler.onResponseHeadersDone(ktStream, blockType)
         }
 
@@ -84,18 +78,18 @@ internal fun HttpStreamResponseHandler.asJniStreamBaseResponseHandler(): HttpStr
             if (bodyBytesIn == null) {
                 return 0
             }
-            val ktStream = Http2StreamJVM(stream as software.amazon.awssdk.crt.http.Http2Stream)
+            val ktStream = HttpStreamJVM(stream)
             val buffer = aws.sdk.kotlin.crt.io.byteArrayBuffer(bodyBytesIn)
             return handler.onResponseBody(ktStream, buffer)
         }
 
         override fun onResponseComplete(stream: HttpStreamBaseJni, errorCode: Int) {
-            val ktStream = Http2StreamJVM(stream as software.amazon.awssdk.crt.http.Http2Stream)
+            val ktStream = HttpStreamJVM(stream)
             handler.onResponseComplete(ktStream, errorCode)
         }
 
         override fun onMetrics(stream: HttpStreamBaseJni, metrics: software.amazon.awssdk.crt.http.HttpStreamMetrics) {
-            val ktStream = Http2StreamJVM(stream as software.amazon.awssdk.crt.http.Http2Stream)
+            val ktStream = HttpStreamJVM(stream)
             handler.onMetrics(ktStream, metrics.toKotlin())
         }
     }

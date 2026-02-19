@@ -18,8 +18,8 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.util.concurrent.CompletableFuture
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 
+// TODO Relocate this to common sourceset when Native implementation is complete (also need to find a KMP mockserver dependency)
 class Http2ClientConnectionTest : CrtTest() {
     private lateinit var mockServer: MockWebServer
     private lateinit var serverCert: HeldCertificate
@@ -81,10 +81,9 @@ class Http2ClientConnectionTest : CrtTest() {
                 val conn = connManager.acquireConnection()
 
                 // Confirm we got an HTTP/2 connection
-                assertTrue(conn is Http2ClientConnection, "Expected HTTP/2 connection but got ${conn::class.simpleName}")
                 assertEquals(HttpVersion.HTTP_2, conn.version, "Connection version should be HTTP/2")
 
-                val request = Http2Request.build {
+                val request = HttpRequest.build {
                     method = "GET"
                     encodedPath = "/"
                     headers {
@@ -101,7 +100,7 @@ class Http2ClientConnectionTest : CrtTest() {
 
                 val handler = object : HttpStreamResponseHandler {
                     override fun onResponseHeaders(
-                        stream: HttpStreamBase,
+                        stream: HttpStream,
                         responseStatusCode: Int,
                         blockType: Int,
                         nextHeaders: List<HttpHeader>?,
@@ -109,12 +108,12 @@ class Http2ClientConnectionTest : CrtTest() {
                         responseFuture.complete(responseStatusCode)
                     }
 
-                    override fun onResponseBody(stream: HttpStreamBase, bodyBytesIn: Buffer): Int {
+                    override fun onResponseBody(stream: HttpStream, bodyBytesIn: Buffer): Int {
                         bodyBuilder.append(String(bodyBytesIn.readAll()))
                         return bodyBytesIn.len
                     }
 
-                    override fun onResponseComplete(stream: HttpStreamBase, errorCode: Int) {
+                    override fun onResponseComplete(stream: HttpStream, errorCode: Int) {
                         bodyFuture.complete(bodyBuilder.toString())
                         stream.close()
                     }

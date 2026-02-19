@@ -7,11 +7,12 @@ package aws.sdk.kotlin.crt.http
 
 import kotlinx.coroutines.future.await
 import software.amazon.awssdk.crt.http.HttpStream as HttpStreamJni
+import software.amazon.awssdk.crt.http.HttpStreamBase as HttpStreamBaseJni
 
 /**
- * Wrapper around CRT Java's HttpStream that implements the KMP interface
+ * Wrapper around CRT Java's HttpStreamBase that implements the KMP interface
  */
-internal class HttpStreamJVM(private val jniStream: HttpStreamJni) : HttpStream {
+internal class HttpStreamJVM(private val jniStream: HttpStreamBaseJni) : HttpStream {
     override val responseStatusCode: Int
         get() = jniStream.responseStatusCode
 
@@ -22,6 +23,7 @@ internal class HttpStreamJVM(private val jniStream: HttpStreamJni) : HttpStream 
     override fun close() = jniStream.close()
 
     override suspend fun writeChunk(chunkData: ByteArray, isFinalChunk: Boolean) {
+        require(jniStream is HttpStreamJni) { "writeChunk only supported for HTTP/1.1 streams" }
         jniStream.writeChunk(chunkData, isFinalChunk).await()
     }
 }

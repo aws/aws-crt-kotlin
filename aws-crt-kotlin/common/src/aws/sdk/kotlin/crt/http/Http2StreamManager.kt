@@ -30,7 +30,7 @@ public expect class Http2StreamManager(options: Http2StreamManagerOptions) :
      * @param handler The stream handler for response callbacks
      * @return The HTTP/2 stream
      */
-    public suspend fun acquireStream(request: Http2Request, handler: HttpStreamResponseHandler): Http2Stream
+    public suspend fun acquireStream(request: HttpRequest, handler: HttpStreamResponseHandler): HttpStream
 
     /**
      * Get current metrics for the stream manager

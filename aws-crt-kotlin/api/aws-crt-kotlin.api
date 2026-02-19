@@ -453,21 +453,6 @@ public final class aws/sdk/kotlin/crt/http/HeadersBuilder {
 	public final fun set (Ljava/lang/String;Ljava/lang/String;)V
 }
 
-public abstract interface class aws/sdk/kotlin/crt/http/Http2ClientConnection : aws/sdk/kotlin/crt/http/HttpClientConnection {
-	public abstract fun makeRequest (Laws/sdk/kotlin/crt/http/Http2Request;Laws/sdk/kotlin/crt/http/HttpStreamResponseHandler;)Laws/sdk/kotlin/crt/http/Http2Stream;
-	public abstract fun sendGoAway (Laws/sdk/kotlin/crt/http/Http2ErrorCode;Z[B)V
-	public static synthetic fun sendGoAway$default (Laws/sdk/kotlin/crt/http/Http2ClientConnection;Laws/sdk/kotlin/crt/http/Http2ErrorCode;Z[BILjava/lang/Object;)V
-	public abstract fun sendPing ([BLkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static synthetic fun sendPing$default (Laws/sdk/kotlin/crt/http/Http2ClientConnection;[BLkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
-	public abstract fun updateConnectionWindow (J)V
-	public abstract fun updateSettings (Ljava/util/List;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-}
-
-public final class aws/sdk/kotlin/crt/http/Http2ClientConnection$DefaultImpls {
-	public static synthetic fun sendGoAway$default (Laws/sdk/kotlin/crt/http/Http2ClientConnection;Laws/sdk/kotlin/crt/http/Http2ErrorCode;Z[BILjava/lang/Object;)V
-	public static synthetic fun sendPing$default (Laws/sdk/kotlin/crt/http/Http2ClientConnection;[BLkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
-}
-
 public final class aws/sdk/kotlin/crt/http/Http2ConnectionSetting {
 	public fun <init> (Laws/sdk/kotlin/crt/http/Http2SettingId;J)V
 	public final fun component1 ()Laws/sdk/kotlin/crt/http/Http2SettingId;
@@ -501,45 +486,6 @@ public final class aws/sdk/kotlin/crt/http/Http2ErrorCode : java/lang/Enum {
 	public static fun values ()[Laws/sdk/kotlin/crt/http/Http2ErrorCode;
 }
 
-public final class aws/sdk/kotlin/crt/http/Http2Request {
-	public static final field Companion Laws/sdk/kotlin/crt/http/Http2Request$Companion;
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;Laws/sdk/kotlin/crt/http/Headers;Laws/sdk/kotlin/crt/http/HttpRequestBodyStream;)V
-	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Laws/sdk/kotlin/crt/http/Headers;Laws/sdk/kotlin/crt/http/HttpRequestBodyStream;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()Ljava/lang/String;
-	public final fun component3 ()Laws/sdk/kotlin/crt/http/Headers;
-	public final fun component4 ()Laws/sdk/kotlin/crt/http/HttpRequestBodyStream;
-	public final fun copy (Ljava/lang/String;Ljava/lang/String;Laws/sdk/kotlin/crt/http/Headers;Laws/sdk/kotlin/crt/http/HttpRequestBodyStream;)Laws/sdk/kotlin/crt/http/Http2Request;
-	public static synthetic fun copy$default (Laws/sdk/kotlin/crt/http/Http2Request;Ljava/lang/String;Ljava/lang/String;Laws/sdk/kotlin/crt/http/Headers;Laws/sdk/kotlin/crt/http/HttpRequestBodyStream;ILjava/lang/Object;)Laws/sdk/kotlin/crt/http/Http2Request;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getBody ()Laws/sdk/kotlin/crt/http/HttpRequestBodyStream;
-	public final fun getEncodedPath ()Ljava/lang/String;
-	public final fun getHeaders ()Laws/sdk/kotlin/crt/http/Headers;
-	public final fun getMethod ()Ljava/lang/String;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class aws/sdk/kotlin/crt/http/Http2Request$Companion {
-	public final fun build (Lkotlin/jvm/functions/Function1;)Laws/sdk/kotlin/crt/http/Http2Request;
-}
-
-public final class aws/sdk/kotlin/crt/http/Http2RequestBuilder {
-	public fun <init> ()V
-	public final fun build ()Laws/sdk/kotlin/crt/http/Http2Request;
-	public final fun getBody ()Laws/sdk/kotlin/crt/http/HttpRequestBodyStream;
-	public final fun getEncodedPath ()Ljava/lang/String;
-	public final fun getHeaders ()Laws/sdk/kotlin/crt/http/HeadersBuilder;
-	public final fun getMethod ()Ljava/lang/String;
-	public final fun setBody (Laws/sdk/kotlin/crt/http/HttpRequestBodyStream;)V
-	public final fun setEncodedPath (Ljava/lang/String;)V
-	public final fun setMethod (Ljava/lang/String;)V
-}
-
-public final class aws/sdk/kotlin/crt/http/Http2RequestKt {
-	public static final fun headers (Laws/sdk/kotlin/crt/http/Http2RequestBuilder;Lkotlin/jvm/functions/Function1;)V
-}
-
 public final class aws/sdk/kotlin/crt/http/Http2SettingId : java/lang/Enum {
 	public static final field ENABLE_PUSH Laws/sdk/kotlin/crt/http/Http2SettingId;
 	public static final field HEADER_TABLE_SIZE Laws/sdk/kotlin/crt/http/Http2SettingId;
@@ -564,13 +510,9 @@ public final class aws/sdk/kotlin/crt/http/Http2SettingsBuilder {
 	public final fun setting (Laws/sdk/kotlin/crt/http/Http2SettingId;J)V
 }
 
-public abstract interface class aws/sdk/kotlin/crt/http/Http2Stream : aws/sdk/kotlin/crt/http/HttpStreamBase {
-	public abstract fun resetStream (Laws/sdk/kotlin/crt/http/Http2ErrorCode;)V
-}
-
 public final class aws/sdk/kotlin/crt/http/Http2StreamManager : aws/sdk/kotlin/crt/AsyncShutdown, aws/sdk/kotlin/crt/Closeable {
 	public fun <init> (Laws/sdk/kotlin/crt/http/Http2StreamManagerOptions;)V
-	public final fun acquireStream (Laws/sdk/kotlin/crt/http/Http2Request;Laws/sdk/kotlin/crt/http/HttpStreamResponseHandler;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun acquireStream (Laws/sdk/kotlin/crt/http/HttpRequest;Laws/sdk/kotlin/crt/http/HttpStreamResponseHandler;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun close ()V
 	public final fun getManagerMetrics ()Laws/sdk/kotlin/crt/http/HttpManagerMetrics;
 	public final fun getOptions ()Laws/sdk/kotlin/crt/http/Http2StreamManagerOptions;
@@ -622,7 +564,7 @@ public final class aws/sdk/kotlin/crt/http/Http2StreamManagerOptionsBuilder {
 public abstract interface class aws/sdk/kotlin/crt/http/HttpClientConnection : aws/sdk/kotlin/crt/Closeable {
 	public abstract fun getId ()Ljava/lang/String;
 	public abstract fun getVersion ()Laws/sdk/kotlin/crt/http/HttpVersion;
-	public abstract fun makeRequest (Laws/sdk/kotlin/crt/http/HttpRequest;Laws/sdk/kotlin/crt/http/HttpStreamResponseHandler;)Laws/sdk/kotlin/crt/http/HttpStreamBase;
+	public abstract fun makeRequest (Laws/sdk/kotlin/crt/http/HttpRequest;Laws/sdk/kotlin/crt/http/HttpStreamResponseHandler;)Laws/sdk/kotlin/crt/http/HttpStream;
 	public abstract fun shutdown ()V
 }
 
@@ -824,14 +766,11 @@ public final class aws/sdk/kotlin/crt/http/HttpRequestKt {
 	public static final fun headers (Laws/sdk/kotlin/crt/http/HttpRequestBuilder;Lkotlin/jvm/functions/Function1;)V
 }
 
-public abstract interface class aws/sdk/kotlin/crt/http/HttpStream : aws/sdk/kotlin/crt/http/HttpStreamBase {
-	public abstract fun writeChunk ([BZLkotlin/coroutines/Continuation;)Ljava/lang/Object;
-}
-
-public abstract interface class aws/sdk/kotlin/crt/http/HttpStreamBase : aws/sdk/kotlin/crt/Closeable {
+public abstract interface class aws/sdk/kotlin/crt/http/HttpStream : aws/sdk/kotlin/crt/Closeable {
 	public abstract fun activate ()V
 	public abstract fun getResponseStatusCode ()I
 	public abstract fun incrementWindow (I)V
+	public abstract fun writeChunk ([BZLkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
 public final class aws/sdk/kotlin/crt/http/HttpStreamMetrics {
@@ -862,17 +801,17 @@ public final class aws/sdk/kotlin/crt/http/HttpStreamMetricsJVMKt {
 }
 
 public abstract interface class aws/sdk/kotlin/crt/http/HttpStreamResponseHandler {
-	public fun onMetrics (Laws/sdk/kotlin/crt/http/HttpStreamBase;Laws/sdk/kotlin/crt/http/HttpStreamMetrics;)V
-	public fun onResponseBody (Laws/sdk/kotlin/crt/http/HttpStreamBase;Laws/sdk/kotlin/crt/io/Buffer;)I
-	public abstract fun onResponseComplete (Laws/sdk/kotlin/crt/http/HttpStreamBase;I)V
-	public abstract fun onResponseHeaders (Laws/sdk/kotlin/crt/http/HttpStreamBase;IILjava/util/List;)V
-	public fun onResponseHeadersDone (Laws/sdk/kotlin/crt/http/HttpStreamBase;I)V
+	public fun onMetrics (Laws/sdk/kotlin/crt/http/HttpStream;Laws/sdk/kotlin/crt/http/HttpStreamMetrics;)V
+	public fun onResponseBody (Laws/sdk/kotlin/crt/http/HttpStream;Laws/sdk/kotlin/crt/io/Buffer;)I
+	public abstract fun onResponseComplete (Laws/sdk/kotlin/crt/http/HttpStream;I)V
+	public abstract fun onResponseHeaders (Laws/sdk/kotlin/crt/http/HttpStream;IILjava/util/List;)V
+	public fun onResponseHeadersDone (Laws/sdk/kotlin/crt/http/HttpStream;I)V
 }
 
 public final class aws/sdk/kotlin/crt/http/HttpStreamResponseHandler$DefaultImpls {
-	public static fun onMetrics (Laws/sdk/kotlin/crt/http/HttpStreamResponseHandler;Laws/sdk/kotlin/crt/http/HttpStreamBase;Laws/sdk/kotlin/crt/http/HttpStreamMetrics;)V
-	public static fun onResponseBody (Laws/sdk/kotlin/crt/http/HttpStreamResponseHandler;Laws/sdk/kotlin/crt/http/HttpStreamBase;Laws/sdk/kotlin/crt/io/Buffer;)I
-	public static fun onResponseHeadersDone (Laws/sdk/kotlin/crt/http/HttpStreamResponseHandler;Laws/sdk/kotlin/crt/http/HttpStreamBase;I)V
+	public static fun onMetrics (Laws/sdk/kotlin/crt/http/HttpStreamResponseHandler;Laws/sdk/kotlin/crt/http/HttpStream;Laws/sdk/kotlin/crt/http/HttpStreamMetrics;)V
+	public static fun onResponseBody (Laws/sdk/kotlin/crt/http/HttpStreamResponseHandler;Laws/sdk/kotlin/crt/http/HttpStream;Laws/sdk/kotlin/crt/io/Buffer;)I
+	public static fun onResponseHeadersDone (Laws/sdk/kotlin/crt/http/HttpStreamResponseHandler;Laws/sdk/kotlin/crt/http/HttpStream;I)V
 }
 
 public final class aws/sdk/kotlin/crt/http/HttpVersion : java/lang/Enum {

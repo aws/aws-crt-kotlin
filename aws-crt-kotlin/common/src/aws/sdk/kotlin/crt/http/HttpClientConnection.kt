@@ -36,7 +36,7 @@ public interface HttpClientConnection : Closeable {
      * @return The HttpStreamBase that represents this Request/Response Pair. It can be closed at any time during the
      *          request/response, but must be closed by the user thread making this request when it's done.
      */
-    public fun makeRequest(httpReq: HttpRequest, handler: HttpStreamResponseHandler): HttpStreamBase
+    public fun makeRequest(httpReq: HttpRequest, handler: HttpStreamResponseHandler): HttpStream
 
     /**
      * Forcefully close the connection
