@@ -94,7 +94,9 @@ internal fun HttpRequest.toHttp2NativeRequest(): CPointer<aws_http_message> {
 
         // Add regular headers (skip pseudo-headers)
         this.headers.entries().forEach { (key, values) ->
-            nativeReq.addHeader(key, values)
+            if (!key.startsWith(":")) {
+                nativeReq.addHeader(key, values)
+            }
         }
 
         val bodyStream = body?.let { inputStream(it) }
