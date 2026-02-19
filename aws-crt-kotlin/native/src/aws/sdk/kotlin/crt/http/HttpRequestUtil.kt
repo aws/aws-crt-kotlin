@@ -10,9 +10,9 @@ import aws.sdk.kotlin.crt.util.asAwsByteCursor
 import aws.sdk.kotlin.crt.util.initFromCursor
 import aws.sdk.kotlin.crt.util.toKString
 import aws.sdk.kotlin.crt.util.withAwsByteCursor
+import cnames.structs.aws_http_message
 import kotlinx.cinterop.*
 import libcrt.*
-import cnames.structs.aws_http_message
 
 /**
  * Convert Kotlin HttpRequest to native HTTP/1.1 request message
