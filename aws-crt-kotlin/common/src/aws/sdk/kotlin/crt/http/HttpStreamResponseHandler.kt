@@ -17,7 +17,7 @@ public interface HttpStreamResponseHandler {
      * Called from Native when new Http Headers have been received.
      * Note that this function may be called multiple times as HTTP headers are received.
      *
-     * @param stream The HttpStreamBase object
+     * @param stream The HttpStream object
      * @param responseStatusCode The HTTP Response Status Code
      * @param blockType The HTTP header block type
      * @param nextHeaders The headers received in the latest IO event.
@@ -33,7 +33,7 @@ public interface HttpStreamResponseHandler {
      * Called from Native once all HTTP Headers are processed. Will not be called if there are no Http Headers in the
      * response. Guaranteed to be called exactly once if there is at least 1 Header.
      *
-     * @param stream The HttpStreamBase object
+     * @param stream The HttpStream object
      * @param blockType The type of the header block, corresponds to [HttpHeaderBlock]
      */
     public fun onResponseHeadersDone(stream: HttpStream, blockType: Int) {
