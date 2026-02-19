@@ -466,26 +466,6 @@ public final class aws/sdk/kotlin/crt/http/Http2ConnectionSetting {
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class aws/sdk/kotlin/crt/http/Http2ErrorCode : java/lang/Enum {
-	public static final field CANCEL Laws/sdk/kotlin/crt/http/Http2ErrorCode;
-	public static final field COMPRESSION_ERROR Laws/sdk/kotlin/crt/http/Http2ErrorCode;
-	public static final field CONNECT_ERROR Laws/sdk/kotlin/crt/http/Http2ErrorCode;
-	public static final field ENHANCE_YOUR_CALM Laws/sdk/kotlin/crt/http/Http2ErrorCode;
-	public static final field FLOW_CONTROL_ERROR Laws/sdk/kotlin/crt/http/Http2ErrorCode;
-	public static final field FRAME_SIZE_ERROR Laws/sdk/kotlin/crt/http/Http2ErrorCode;
-	public static final field HTTP_1_1_REQUIRED Laws/sdk/kotlin/crt/http/Http2ErrorCode;
-	public static final field INADEQUATE_SECURITY Laws/sdk/kotlin/crt/http/Http2ErrorCode;
-	public static final field INTERNAL_ERROR Laws/sdk/kotlin/crt/http/Http2ErrorCode;
-	public static final field PROTOCOL_ERROR Laws/sdk/kotlin/crt/http/Http2ErrorCode;
-	public static final field REFUSED_STREAM Laws/sdk/kotlin/crt/http/Http2ErrorCode;
-	public static final field SETTINGS_TIMEOUT Laws/sdk/kotlin/crt/http/Http2ErrorCode;
-	public static final field STREAM_CLOSED Laws/sdk/kotlin/crt/http/Http2ErrorCode;
-	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public final fun getValue ()I
-	public static fun valueOf (Ljava/lang/String;)Laws/sdk/kotlin/crt/http/Http2ErrorCode;
-	public static fun values ()[Laws/sdk/kotlin/crt/http/Http2ErrorCode;
-}
-
 public final class aws/sdk/kotlin/crt/http/Http2SettingId : java/lang/Enum {
 	public static final field ENABLE_PUSH Laws/sdk/kotlin/crt/http/Http2SettingId;
 	public static final field HEADER_TABLE_SIZE Laws/sdk/kotlin/crt/http/Http2SettingId;
