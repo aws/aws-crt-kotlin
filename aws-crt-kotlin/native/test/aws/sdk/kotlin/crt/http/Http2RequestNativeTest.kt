@@ -60,7 +60,7 @@ class Http2RequestNativeTest : CrtTest() {
         try {
             val headers = aws_http_message_get_headers(nativeReq)
             assertNotNull(headers, "Headers should not be null")
-            
+
             // Verify all headers are present
             val headerCount = aws_http_message_get_header_count(nativeReq).toInt()
             assertEquals(6, headerCount)
