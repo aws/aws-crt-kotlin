@@ -7,10 +7,10 @@ package aws.sdk.kotlin.crt.http
 
 import software.amazon.awssdk.crt.http.Http2ConnectionSetting as Http2ConnectionSettingJni
 import software.amazon.awssdk.crt.http.Http2Request as Http2RequestJni
+import software.amazon.awssdk.crt.http.Http2StreamManagerOptions as Http2StreamManagerOptionsJni
 import software.amazon.awssdk.crt.http.HttpHeader as HttpHeaderJni
 import software.amazon.awssdk.crt.http.HttpStreamBase as HttpStreamBaseJni
 import software.amazon.awssdk.crt.http.HttpStreamBaseResponseHandler as HttpStreamBaseResponseHandlerJni
-import software.amazon.awssdk.crt.http.Http2StreamManagerOptions as Http2StreamManagerOptionsJni
 import software.amazon.awssdk.crt.http.HttpStreamMetrics as HttpStreamMetricsJni
 
 /**
