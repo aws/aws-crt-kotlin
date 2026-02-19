@@ -5,16 +5,17 @@
 
 package aws.sdk.kotlin.crt.http
 
+import aws.sdk.kotlin.crt.AsyncShutdown
 import kotlinx.coroutines.future.await
 import software.amazon.awssdk.crt.http.Http2StreamManager as Http2StreamManagerJni
+import aws.sdk.kotlin.crt.Closeable
 
 /**
  * JVM implementation of Http2StreamManager wrapping aws-crt-java's Http2StreamManager
  */
 public actual class Http2StreamManager actual constructor(
     public actual val options: Http2StreamManagerOptions,
-) : aws.sdk.kotlin.crt.Closeable,
-    aws.sdk.kotlin.crt.AsyncShutdown {
+) : Closeable, AsyncShutdown {
 
     private val jniManager: Http2StreamManagerJni = Http2StreamManagerJni.create(options.toJni())
 
