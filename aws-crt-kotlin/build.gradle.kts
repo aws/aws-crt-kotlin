@@ -62,7 +62,8 @@ kotlin {
         val jvmTest by getting {
             dependencies {
                 implementation(libs.kotlinx.coroutines.debug)
-                implementation(libs.mockserver.netty)
+                implementation(libs.okhttp.mockwebserver)
+                implementation(libs.okhttp.tls)
             }
         }
     }

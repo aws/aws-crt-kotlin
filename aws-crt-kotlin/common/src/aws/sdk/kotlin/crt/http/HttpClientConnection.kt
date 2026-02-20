@@ -21,6 +21,11 @@ public interface HttpClientConnection : Closeable {
     public val id: String
 
     /**
+     * The HTTP version of this connection.
+     */
+    public val version: HttpVersion
+
+    /**
      * Schedules an HttpRequest on the Native EventLoop for this HttpClientConnection.
      * The request does not start sending automatically once the stream is created. You must call
      * [HttpStream.activate] to begin execution of the request.

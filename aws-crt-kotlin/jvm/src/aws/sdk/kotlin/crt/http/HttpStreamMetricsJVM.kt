@@ -4,10 +4,12 @@
  */
 package aws.sdk.kotlin.crt.http
 
+import software.amazon.awssdk.crt.http.HttpStreamMetrics as HttpStreamMetricsJni
+
 /**
  * Convert a CRT JNI metrics object into a Kotlin-native one
  */
-public fun software.amazon.awssdk.crt.http.HttpStreamMetrics.toKotlin(): HttpStreamMetrics = HttpStreamMetrics(
+public fun HttpStreamMetricsJni.toKotlin(): HttpStreamMetrics = HttpStreamMetrics(
     sendStartTimestampNs = this.sendStartTimestampNs,
     sendEndTimestampNs = this.sendEndTimestampNs,
     sendingDurationNs = this.sendingDurationNs,

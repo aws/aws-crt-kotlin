@@ -8,13 +8,11 @@ package aws.sdk.kotlin.crt.http
 import aws.sdk.kotlin.crt.util.Digest
 import aws.sdk.kotlin.crt.util.encodeToHex
 import kotlinx.coroutines.runBlocking
+import mockwebserver3.MockResponse
+import mockwebserver3.MockWebServer
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.TestInstance
-import org.mockserver.client.MockServerClient
-import org.mockserver.integration.ClientAndServer
-import org.mockserver.model.HttpRequest.request
-import org.mockserver.model.HttpResponse.response
 import kotlin.test.*
 
 private val TEST_DOC_LINE = "This is a sample to prove that http downloads and uploads work."
@@ -23,12 +21,13 @@ private val TEST_DOC_SHA256 = "c7fdb5314b9742467b16bd5ea2f8012190b5e2c44a005f798
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class HttpRequestResponseTest : HttpClientTest() {
 
-    lateinit var mockServer: MockServerClient
+    lateinit var mockServer: MockWebServer
     lateinit var url: String
 
     @BeforeAll
     fun setup() {
-        mockServer = ClientAndServer.startClientAndServer(0)
+        mockServer = MockWebServer()
+        mockServer.start()
         url = "http://localhost:${mockServer.port}"
     }
 
@@ -39,15 +38,11 @@ class HttpRequestResponseTest : HttpClientTest() {
 
     // no body request
     private suspend fun testSimpleRequest(verb: String, path: String, expectedStatus: Int) {
-        val expectedRequest = request().withMethod(verb).withPath(path)
-        val unhandledRequest = request()
-
-        // Set up the expected case
-        mockServer.`when`(expectedRequest)
-            .respond(response().withStatusCode(expectedStatus))
-
-        // Unhandled requests
-        mockServer.`when`(unhandledRequest).respond(response().withStatusCode(500))
+        mockServer.enqueue(
+            MockResponse.Builder()
+                .code(expectedStatus)
+                .build(),
+        )
 
         try {
             val response = roundTrip(url = url + path, verb = verb)
@@ -58,10 +53,6 @@ class HttpRequestResponseTest : HttpClientTest() {
             )
         } catch (ex: Exception) {
             fail("[$url]: failed to round trip request: $ex")
-        } finally {
-            // Clean up
-            mockServer.clear(expectedRequest)
-            mockServer.clear(unhandledRequest)
         }
     }
 
@@ -110,16 +101,14 @@ class HttpRequestResponseTest : HttpClientTest() {
     fun testHttpUpload() = runBlocking {
         val bodyToSend = TEST_DOC_LINE
 
-        // Set up mock server
-        val expectedRequest = request().withMethod("PUT").withPath("/anything")
-        mockServer.`when`(expectedRequest)
-            .respond(response().withStatusCode(200).withBody(bodyToSend))
+        mockServer.enqueue(
+            MockResponse.Builder()
+                .code(200)
+                .body(bodyToSend)
+                .build(),
+        )
 
-        val response = try {
-            roundTrip(url = "$url/anything", verb = "PUT", body = bodyToSend)
-        } finally {
-            mockServer.clear(expectedRequest)
-        }
+        val response = roundTrip(url = "$url/anything", verb = "PUT", body = bodyToSend)
 
         assertEquals(200, response.statusCode, "expected http status does not match")
         assertNotNull(response.body, "expected a response body for http upload")

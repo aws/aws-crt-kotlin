@@ -14,9 +14,8 @@ import aws.sdk.kotlin.crt.Closeable
  * Can be used to update the Window size, or to abort the stream early in the middle of sending/receiving Http Bodies.
  */
 public interface HttpStream : Closeable {
-
     /**
-     * Retrieve the Http response status code. Available ONLY after the first set of response
+     * Retrieve the HTTP response status code. Available ONLY after the first set of response
      * headers have been received. See [HttpStreamResponseHandler]
      */
     public val responseStatusCode: Int
@@ -43,6 +42,7 @@ public interface HttpStream : Closeable {
 
     /**
      * Send a chunk of data. You must call activate() before using this function.
+     * Note: Only supported for HTTP/1.1 streams. Will throw for HTTP/2 streams.
      * @param chunkData the chunk of data to send. this should be already formatted in the chunked transfer encoding.
      * @param isFinalChunk represents if the chunk of data is the final chunk. if set to true, this will terminate the request stream.
      */
