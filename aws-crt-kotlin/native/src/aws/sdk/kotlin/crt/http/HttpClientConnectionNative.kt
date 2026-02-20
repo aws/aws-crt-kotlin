@@ -27,7 +27,11 @@ internal class HttpClientConnectionNative(
     override val version: HttpVersion = HttpVersion.fromInt(aws_http_connection_get_version(ptr).value.toInt())
 
     override fun makeRequest(httpReq: HttpRequest, handler: HttpStreamResponseHandler): HttpStream {
-        val nativeReq = httpReq.toNativeRequest()
+        val nativeReq = if (version == HttpVersion.HTTP_2) {
+            httpReq.toHttp2NativeRequest()
+        } else {
+            httpReq.toNativeRequest()
+        }
         val cbData = HttpStreamContext(null, handler, nativeReq)
         val stableRef = StableRef.create(cbData)
         val reqOptions = cValue<aws_http_make_request_options> {
@@ -181,85 +185,4 @@ private fun onStreamComplete(
             aws_http_message_release(ctx.nativeReq)
         }
     }
-}
-
-internal fun HttpRequest.toNativeRequest(): CPointer<cnames.structs.aws_http_message> {
-    val nativeReq = checkNotNull(
-        aws_http_message_new_request(Allocator.Default),
-    ) { "aws_http_message_new_request()" }
-
-    try {
-        awsAssertOpSuccess(
-            withAwsByteCursor(method) { method ->
-                aws_http_message_set_request_method(nativeReq, method)
-            },
-        ) { "aws_http_message_set_request_method()" }
-
-        awsAssertOpSuccess(
-            withAwsByteCursor(encodedPath) { encodedPath ->
-                aws_http_message_set_request_path(nativeReq, encodedPath)
-            },
-        ) { "aws_http_message_set_request_path()" }
-
-        headers.forEach { key, values ->
-            // instead of usual idiomatic map(), forEach()...
-            // have to be a little more careful here as some of these are temporaries and we need
-            // stable memory addresses
-            key.encodeToByteArray().usePinned { keyBytes ->
-                val keyCursor = keyBytes.asAwsByteCursor()
-                values.forEach {
-                    it.encodeToByteArray().usePinned { valueBytes ->
-                        val valueCursor = valueBytes.asAwsByteCursor()
-
-                        val header = cValue<aws_http_header> {
-                            name.initFromCursor(keyCursor)
-                            value.initFromCursor(valueCursor)
-                        }
-
-                        awsAssertOpSuccess(
-                            aws_http_message_add_header(nativeReq, header),
-                        ) {
-                            "aws_http_message_add_header()"
-                        }
-                    }
-                }
-            }
-        }
-
-        val bodyStream = body?.let { inputStream(it) }
-        aws_http_message_set_body_stream(nativeReq, bodyStream)
-    } catch (ex: Exception) {
-        aws_http_message_release(nativeReq)
-        throw ex
-    }
-
-    return nativeReq
-}
-
-internal fun CPointer<cnames.structs.aws_http_message>.toHttpRequest(): HttpRequest = memScoped {
-    val nativeReq = this@toHttpRequest
-    val req = HttpRequestBuilder()
-
-    val nativeMethod = cValue<aws_byte_cursor>()
-    val nativeMethodPtr = nativeMethod.ptr
-    aws_http_message_get_request_method(nativeReq, nativeMethodPtr)
-    req.method = nativeMethodPtr.pointed.toKString()
-
-    val encodedPath = cValue<aws_byte_cursor>()
-    val encodedPathPtr = encodedPath.ptr
-    aws_http_message_get_request_path(nativeReq, encodedPathPtr)
-    req.encodedPath = encodedPathPtr.pointed.toKString()
-
-    val headers = aws_http_message_get_headers(nativeReq)
-    for (i in 0 until aws_http_message_get_header_count(nativeReq).toInt()) {
-        val header = cValue<aws_http_header>()
-        val headerPtr = header.ptr
-        aws_http_headers_get_index(headers, i.toULong(), headerPtr)
-        req.headers.append(headerPtr.pointed.name.toKString(), headerPtr.pointed.value.toKString())
-    }
-
-    val nativeStream = aws_http_message_get_body_stream(nativeReq)
-    req.body = nativeStream?.toHttpRequestBodyStream()
-
-    return req.build()
 }
