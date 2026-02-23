@@ -14,7 +14,9 @@ import aws.sdk.kotlin.crt.util.asAwsByteCursor
 import kotlinx.cinterop.*
 import libcrt.*
 
-public class EcdsaNative: WithCrt(), Closeable {
+public class EcdsaNative :
+    WithCrt(),
+    Closeable {
     public lateinit var eccKeyPair: CPointer<aws_ecc_key_pair>
 
     public fun initializeEccKeyPairFromPrivateKey(privateKey: ByteArray) {
@@ -58,4 +60,3 @@ public class EcdsaNative: WithCrt(), Closeable {
         }
     }
 }
-
