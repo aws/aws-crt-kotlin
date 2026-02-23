@@ -62,7 +62,7 @@ public actual class HttpClientConnectionManager actual constructor(
     }
 }
 
-private fun HttpClientConnectionManagerOptions.into(): HttpClientConnectionManagerOptionsJni {
+internal fun HttpClientConnectionManagerOptions.into(): HttpClientConnectionManagerOptionsJni {
     val jniOpts = HttpClientConnectionManagerOptionsJni()
         .withUri(URI.create(uri.toString()))
         .withClientBootstrap(clientBootstrap.jniBootstrap)
@@ -85,14 +85,14 @@ private fun SocketOptions.into(): SocketOptionsJni {
     jniOpts.keepAliveIntervalSecs = keepAliveIntervalSecs
     jniOpts.keepAliveTimeoutSecs = keepAliveTimeoutSecs
     jniOpts.type = when (type) {
-        SocketType.STREAM -> software.amazon.awssdk.crt.io.SocketOptions.SocketType.STREAM
-        SocketType.DGRAM -> software.amazon.awssdk.crt.io.SocketOptions.SocketType.DGRAM
+        SocketType.STREAM -> SocketOptionsJni.SocketType.STREAM
+        SocketType.DGRAM -> SocketOptionsJni.SocketType.DGRAM
     }
 
     jniOpts.domain = when (domain) {
-        SocketDomain.IPv4 -> software.amazon.awssdk.crt.io.SocketOptions.SocketDomain.IPv4
-        SocketDomain.IPv6 -> software.amazon.awssdk.crt.io.SocketOptions.SocketDomain.IPv6
-        SocketDomain.LOCAL -> software.amazon.awssdk.crt.io.SocketOptions.SocketDomain.LOCAL
+        SocketDomain.IPv4 -> SocketOptionsJni.SocketDomain.IPv4
+        SocketDomain.IPv6 -> SocketOptionsJni.SocketDomain.IPv6
+        SocketDomain.LOCAL -> SocketOptionsJni.SocketDomain.LOCAL
     }
 
     return jniOpts
@@ -107,8 +107,8 @@ internal fun HttpProxyOptions.into(): HttpProxyOptionsJni {
     jniOpts.authorizationPassword = authPassword
 
     jniOpts.authorizationType = when (authType) {
-        HttpProxyAuthorizationType.None -> software.amazon.awssdk.crt.http.HttpProxyOptions.HttpProxyAuthorizationType.None
-        HttpProxyAuthorizationType.Basic -> software.amazon.awssdk.crt.http.HttpProxyOptions.HttpProxyAuthorizationType.Basic
+        HttpProxyAuthorizationType.None -> HttpProxyOptionsJni.HttpProxyAuthorizationType.None
+        HttpProxyAuthorizationType.Basic -> HttpProxyOptionsJni.HttpProxyAuthorizationType.Basic
     }
 
     tlsContext?.let { jniOpts.tlsContext = it.jniCtx }

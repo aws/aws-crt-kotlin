@@ -5,10 +5,10 @@
 import aws.sdk.kotlin.gradle.crt.CMakeBuildType
 import aws.sdk.kotlin.gradle.crt.cmakeInstallDir
 import aws.sdk.kotlin.gradle.crt.configureCrtCMakeBuild
-import aws.sdk.kotlin.gradle.dsl.configurePublishing
 import aws.sdk.kotlin.gradle.kmp.NATIVE_ENABLED
 import aws.sdk.kotlin.gradle.kmp.configureIosSimulatorTasks
 import aws.sdk.kotlin.gradle.kmp.configureKmpTargets
+import aws.sdk.kotlin.gradle.publishing.configurePublishing
 import aws.sdk.kotlin.gradle.util.typedProp
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.konan.target.Family
@@ -62,7 +62,8 @@ kotlin {
         val jvmTest by getting {
             dependencies {
                 implementation(libs.kotlinx.coroutines.debug)
-                implementation(libs.mockserver.netty)
+                implementation(libs.okhttp.mockwebserver)
+                implementation(libs.okhttp.tls)
             }
         }
     }

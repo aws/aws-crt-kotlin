@@ -90,4 +90,15 @@ class MutableBufferTest : CrtTest() {
 
         buffer.close()
     }
+
+    @Test
+    fun testEmptyWrite() {
+        val dest = ByteArray(16)
+        val buffer = MutableBuffer.of(dest)
+
+        val written = buffer.write(byteArrayOf())
+        assertEquals(0, written)
+
+        buffer.close()
+    }
 }

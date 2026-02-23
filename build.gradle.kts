@@ -5,6 +5,7 @@
 import aws.sdk.kotlin.gradle.dsl.configureLinting
 import aws.sdk.kotlin.gradle.publishing.SonatypeCentralPortalPublishTask
 import aws.sdk.kotlin.gradle.publishing.SonatypeCentralPortalWaitForPublicationTask
+import aws.sdk.kotlin.gradle.publishing.configureJarReduction
 import aws.sdk.kotlin.gradle.util.typedProp
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
@@ -66,3 +67,4 @@ val lintPaths = listOf(
 )
 
 configureLinting(lintPaths)
+configureJarReduction("aws/sdk/kotlin/crt")
