@@ -19,7 +19,8 @@ import libcrt.*
  */
 public class EcdsaSecp256r1Native(
     privateKey: ByteArray,
-) : WithCrt(), Closeable {
+) : WithCrt(),
+    Closeable {
 
     private val eccKeyPair = privateKey.usePinned { pinnedPrivateKey ->
         aws_ecc_key_pair_new_from_private_key(
