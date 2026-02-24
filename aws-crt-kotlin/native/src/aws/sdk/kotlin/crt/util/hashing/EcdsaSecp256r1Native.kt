@@ -14,10 +14,13 @@ import aws.sdk.kotlin.crt.util.asAwsByteCursor
 import kotlinx.cinterop.*
 import libcrt.*
 
-public class EcdsaNative :
+/**
+ * Provides ECDSA on the SECP256R1 curve functionality backed by CRT implementation.
+ */
+public class EcdsaSecp256r1Native :
     WithCrt(),
     Closeable {
-    public lateinit var eccKeyPair: CPointer<aws_ecc_key_pair>
+    private lateinit var eccKeyPair: CPointer<aws_ecc_key_pair>
 
     public fun initializeEccKeyPairFromPrivateKey(privateKey: ByteArray) {
         privateKey.usePinned { pinnedPrivateKey ->

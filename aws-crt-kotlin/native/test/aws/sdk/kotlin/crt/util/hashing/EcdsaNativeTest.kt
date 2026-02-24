@@ -23,7 +23,7 @@ class EcdsaNativeTest {
 
     @Test
     fun testInitializeAndClose() {
-        EcdsaNative().use { ecdsa ->
+        EcdsaSecp256r1Native().use { ecdsa ->
             ecdsa.initializeEccKeyPairFromPrivateKey(privateKey)
             ecdsa.close()
         }
@@ -31,7 +31,7 @@ class EcdsaNativeTest {
 
     @Test
     fun testSignMessage() {
-        EcdsaNative().use { ecdsa ->
+        EcdsaSecp256r1Native().use { ecdsa ->
             ecdsa.initializeEccKeyPairFromPrivateKey(privateKey)
             val message = "test message".encodeToByteArray()
             val signature = ecdsa.signMessage(message)
@@ -42,7 +42,7 @@ class EcdsaNativeTest {
 
     @Test
     fun testInvalidPrivateKey() {
-        EcdsaNative().use { ecdsa ->
+        EcdsaSecp256r1Native().use { ecdsa ->
             assertFailsWith<CrtRuntimeException> {
                 ecdsa.initializeEccKeyPairFromPrivateKey(ByteArray(10))
             }
