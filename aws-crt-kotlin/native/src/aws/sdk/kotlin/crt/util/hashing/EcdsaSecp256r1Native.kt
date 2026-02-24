@@ -6,7 +6,6 @@
 package aws.sdk.kotlin.crt.util.hashing
 
 import aws.sdk.kotlin.crt.Allocator
-import aws.sdk.kotlin.crt.Closeable
 import aws.sdk.kotlin.crt.CrtRuntimeException
 import aws.sdk.kotlin.crt.WithCrt
 import aws.sdk.kotlin.crt.awsAssertOpSuccess
@@ -17,25 +16,20 @@ import libcrt.*
 /**
  * Provides ECDSA on the SECP256R1 curve functionality backed by CRT implementation.
  */
-public class EcdsaSecp256r1Native :
-    WithCrt(),
-    Closeable {
-    private lateinit var eccKeyPair: CPointer<aws_ecc_key_pair>
+public class EcdsaSecp256r1Native(
+    privateKey: ByteArray,
+) : WithCrt() {
 
-    public fun initializeEccKeyPairFromPrivateKey(privateKey: ByteArray) {
-        privateKey.usePinned { pinnedPrivateKey ->
-            eccKeyPair = aws_ecc_key_pair_new_from_private_key(
-                Allocator.Default,
-                aws_ecc_curve_name.AWS_CAL_ECDSA_P256,
-                pinnedPrivateKey.asAwsByteCursor(),
-            ) ?: throw CrtRuntimeException("Failed to create ECC key pair from private key")
-        }
+    private val eccKeyPair = privateKey.usePinned { pinnedPrivateKey ->
+        aws_ecc_key_pair_new_from_private_key(
+            Allocator.Default,
+            aws_ecc_curve_name.AWS_CAL_ECDSA_P256,
+            pinnedPrivateKey.asAwsByteCursor(),
+        ) ?: throw CrtRuntimeException("Failed to create ECC key pair from private key")
     }
 
-    public override fun close() {
-        if (this::eccKeyPair.isInitialized) {
-            aws_ecc_key_pair_release(eccKeyPair)
-        }
+    public fun releaseMemory() {
+        aws_ecc_key_pair_release(eccKeyPair)
     }
 
     public fun signMessage(message: ByteArray): ByteArray = memScoped {
