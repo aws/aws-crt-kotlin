@@ -5,6 +5,7 @@
 package aws.sdk.kotlin.crt.util.hashing
 
 import aws.sdk.kotlin.crt.CrtRuntimeException
+import aws.sdk.kotlin.crt.use
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
@@ -21,26 +22,23 @@ class EcdsaSecp256r1NativeTest {
             .copyOfRange(7, 39) // Extract private key scalar ("d") from EC private key
 
     @Test
-    fun testInitializeAndRelease() {
-        EcdsaSecp256r1Native(privateKey).releaseMemory()
+    fun testInitializeAndClose() {
+        EcdsaSecp256r1Native(privateKey).close()
     }
 
     @Test
     fun testSignMessage() {
-        val ecdsa = EcdsaSecp256r1Native(privateKey)
-        try {
+        EcdsaSecp256r1Native(privateKey).use { ecdsa ->
             val message = "test message".encodeToByteArray()
             val signature = ecdsa.signMessage(message)
             assertTrue(signature.isNotEmpty())
-        } finally {
-            ecdsa.releaseMemory()
         }
     }
 
     @Test
     fun testInvalidPrivateKey() {
         assertFailsWith<CrtRuntimeException> {
-            EcdsaSecp256r1Native(ByteArray(10)).releaseMemory()
+            EcdsaSecp256r1Native(ByteArray(10)).close()
         }
     }
 }

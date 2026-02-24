@@ -6,6 +6,7 @@
 package aws.sdk.kotlin.crt.util.hashing
 
 import aws.sdk.kotlin.crt.Allocator
+import aws.sdk.kotlin.crt.Closeable
 import aws.sdk.kotlin.crt.CrtRuntimeException
 import aws.sdk.kotlin.crt.WithCrt
 import aws.sdk.kotlin.crt.awsAssertOpSuccess
@@ -18,7 +19,7 @@ import libcrt.*
  */
 public class EcdsaSecp256r1Native(
     privateKey: ByteArray,
-) : WithCrt() {
+) : WithCrt(), Closeable {
 
     private val eccKeyPair = privateKey.usePinned { pinnedPrivateKey ->
         aws_ecc_key_pair_new_from_private_key(
@@ -28,7 +29,7 @@ public class EcdsaSecp256r1Native(
         ) ?: throw CrtRuntimeException("Failed to create ECC key pair from private key")
     }
 
-    public fun releaseMemory() {
+    override fun close() {
         aws_ecc_key_pair_release(eccKeyPair)
     }
 
