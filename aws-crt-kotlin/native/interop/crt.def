@@ -28,6 +28,7 @@ headers = aws/common/allocator.h \
         aws/compression/compression.h \
         aws/cal/hash.h \
         aws/cal/cal.h \
+        aws/cal/ecc.h \
         aws/checksums/crc.h
 headerFilter = aws/common/* aws/io/* aws/http/* aws/compression/* aws/auth/* aws/checksums/* aws/cal/*
 
