@@ -2,6 +2,10 @@ name: Pull request metrics
 on:
   pull_request:
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   artifact-size-metrics:
     runs-on: ubuntu-latest
@@ -35,7 +39,3 @@ jobs:
         uses: awslabs/aws-kotlin-repo-tools/.github/actions/artifact-size-metrics/download-and-process@main
         with:
           download: 'false'
-
-permissions:
-  id-token: write
-  contents: read

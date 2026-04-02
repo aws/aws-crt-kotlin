@@ -12,7 +12,8 @@ env:
   # picks up `podman` instead.
   OCI_EXE: docker
 
-permissions: { }
+permissions:
+  contents: read
 
 jobs:
   jvm:

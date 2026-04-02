@@ -4,6 +4,10 @@ on:
   release:
     types: [ published ]
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   artifact-size-metrics:
     runs-on: ubuntu-latest
@@ -32,7 +36,3 @@ jobs:
         with:
           upload: 'true'
           release_metrics: 'true'
-
-permissions:
-  id-token: write
-  contents: read
