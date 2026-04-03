@@ -9,7 +9,7 @@ coroutines-version = "1.10.2"
 binary-compatibility-validator-version = "0.18.1"
 
 # testing
-junit-version = "6.0.1"
+junit-version = "6.0.3"
 okhttp-version = "5.3.2"
 
 [libraries]
