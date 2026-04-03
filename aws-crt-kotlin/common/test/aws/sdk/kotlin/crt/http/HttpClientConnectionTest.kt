@@ -68,11 +68,7 @@ class HttpClientConnectionTest : CrtTest() {
         assertConnect("https://kms.us-west-2.amazonaws.com:443")
         assertConnect("https://kms-fips.us-west-2.amazonaws.com:443")
 
-        // bad ssl
-        // assertConnect("https://rsa2048.badssl.com/")
-        assertConnect("http://http.badssl.com/")
-        assertConnectFails("https://expired.badssl.com/", setOf("TLS (SSL) negotiation failed", "tls certificate is malformed or not correctly formatted"))
-        assertConnectFails("https://self-signed.badssl.com/", setOf("TLS (SSL) negotiation failed", "tls certificate is malformed or not correctly formatted"))
+        // TLS error scenarios (expired, self-signed) are tested in JVM-specific HttpClientConnectionTlsTest
     }
 
     /**
@@ -85,17 +81,6 @@ class HttpClientConnectionTest : CrtTest() {
         } catch (ex: Exception) {
             fail("[$url]: ${ex.message}")
         }
-    }
-
-    /**
-     * Assert that an attempt to connect to the given [url] fails with any of the given [exceptionMessages]
-     */
-    private suspend fun assertConnectFails(url: String, exceptionMessages: Set<String>) {
-        val ex = assertFails { connectAllCiphers(url) }
-        assertTrue(
-            exceptionMessages.any { ex.message!!.contains(it) },
-            "Exception message \"${ex.message}\" did not contain any of the expected ${exceptionMessages.joinToString(prefix = "\"", postfix = "\"")}",
-        )
     }
 
     /**
