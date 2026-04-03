@@ -9,7 +9,8 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
-permissions: { }
+permissions:
+  contents: read
 
 env:
   PACKAGE_NAME: aws-crt-kotlin

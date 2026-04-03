@@ -7,7 +7,8 @@ on:
       - main
       - '*-main'
 
-permissions: { }
+permissions:
+  contents: read
 
 jobs:
   api-compat-verification:
