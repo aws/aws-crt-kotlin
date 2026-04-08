@@ -14,8 +14,8 @@ import mockwebserver3.MockResponse
 import mockwebserver3.MockWebServer
 import okhttp3.tls.HandshakeCertificates
 import okhttp3.tls.HeldCertificate
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.Test
+import kotlin.test.AfterTest
+import kotlin.test.Test
 import software.amazon.awssdk.crt.http.HttpException
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -34,7 +34,7 @@ class HttpClientConnectionTlsTest : CrtTest() {
 
     private lateinit var mockServer: MockWebServer
 
-    @AfterEach
+    @AfterTest
     fun teardown() {
         mockServer.close()
     }
