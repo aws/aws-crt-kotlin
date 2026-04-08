@@ -14,9 +14,9 @@ import mockwebserver3.MockResponse
 import mockwebserver3.MockWebServer
 import okhttp3.tls.HandshakeCertificates
 import okhttp3.tls.HeldCertificate
+import software.amazon.awssdk.crt.http.HttpException
 import kotlin.test.AfterTest
 import kotlin.test.Test
-import software.amazon.awssdk.crt.http.HttpException
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.time.Duration.Companion.seconds
