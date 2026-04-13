@@ -10,28 +10,24 @@ import aws.sdk.kotlin.crt.util.encodeToHex
 import kotlinx.coroutines.runBlocking
 import mockwebserver3.MockResponse
 import mockwebserver3.MockWebServer
-import org.junit.jupiter.api.AfterAll
-import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.TestInstance
 import kotlin.test.*
 
 private val TEST_DOC_LINE = "This is a sample to prove that http downloads and uploads work."
 private val TEST_DOC_SHA256 = "c7fdb5314b9742467b16bd5ea2f8012190b5e2c44a005f7984f89aab58219534"
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class HttpRequestResponseTest : HttpClientTest() {
 
     lateinit var mockServer: MockWebServer
     lateinit var url: String
 
-    @BeforeAll
+    @BeforeTest
     fun setup() {
         mockServer = MockWebServer()
         mockServer.start()
         url = "http://localhost:${mockServer.port}"
     }
 
-    @AfterAll
+    @AfterTest
     fun tearDown() {
         mockServer.close()
     }
