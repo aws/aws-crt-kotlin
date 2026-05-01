@@ -1,7 +1,7 @@
 [versions]
 kotlin-version = "2.3.20"
 
-aws-kotlin-repo-tools-version = "0.5.10"
+aws-kotlin-repo-tools-version = "0.5.11"
 
 # libs
 crt-java-version = "0.45.1"
