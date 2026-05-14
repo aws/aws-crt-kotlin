@@ -5,7 +5,7 @@ aws-kotlin-repo-tools-version = "0.5.12"
 
 # libs
 crt-java-version = "0.45.1"
-coroutines-version = "1.10.2"
+coroutines-version = "1.11.0"
 binary-compatibility-validator-version = "0.18.1"
 
 # testing
