@@ -1,6 +1,8 @@
 name: Pull request metrics
 on:
   pull_request:
+  merge_group:
+    types: [checks_requested]
 
 permissions:
   id-token: write
