@@ -2,6 +2,8 @@ name: CI
 
 on:
   pull_request:
+  merge_group:
+    types: [checks_requested]
   workflow_dispatch:
 
 env:
@@ -12,7 +14,8 @@ env:
   # picks up `podman` instead.
   OCI_EXE: docker
 
-permissions: { }
+permissions:
+  contents: read
 
 jobs:
   jvm:

@@ -1,6 +1,12 @@
 name: Pull request metrics
 on:
   pull_request:
+  merge_group:
+    types: [checks_requested]
+
+permissions:
+  id-token: write
+  contents: read
 
 jobs:
   artifact-size-metrics:
@@ -35,7 +41,3 @@ jobs:
         uses: awslabs/aws-kotlin-repo-tools/.github/actions/artifact-size-metrics/download-and-process@main
         with:
           download: 'false'
-
-permissions:
-  id-token: write
-  contents: read

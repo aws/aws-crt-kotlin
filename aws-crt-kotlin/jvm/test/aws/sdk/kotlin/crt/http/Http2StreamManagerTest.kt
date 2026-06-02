@@ -15,10 +15,10 @@ import mockwebserver3.MockWebServer
 import okhttp3.Protocol
 import okhttp3.tls.HandshakeCertificates
 import okhttp3.tls.HeldCertificate
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
 import java.util.concurrent.CompletableFuture
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
+import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
@@ -27,7 +27,7 @@ class Http2StreamManagerTest : CrtTest() {
     private lateinit var mockServer: MockWebServer
     private lateinit var serverCert: HeldCertificate
 
-    @BeforeEach
+    @BeforeTest
     fun setup() {
         serverCert = HeldCertificate.Builder()
             .commonName("localhost")
@@ -43,7 +43,7 @@ class Http2StreamManagerTest : CrtTest() {
         mockServer.start()
     }
 
-    @AfterEach
+    @AfterTest
     fun teardown() {
         mockServer.close()
     }
