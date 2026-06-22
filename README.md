@@ -15,6 +15,39 @@ This project is licensed under the Apache-2.0 License.
 
 CRT interfaces are subject to change.
 
+### Docker
+
+Building CRT requires Docker images to be locally built and consumed. Before running the Gradle build for this project,
+ensure that Docker is installed (or a compatible client like podman or finch) and run:
+
+```sh
+./docker-images/build-all.sh
+```
+
+If you encounter this error:
+
+```
+Unable to find image 'aws-crt-kotlin/linux-x64:latest' locally
+docker: Error response from daemon: pull access denied for aws-crt-kotlin/linux-x64, repository does not exist or may require 'docker login': denied: requested access to the resource is denied.
+See 'docker run --help'.
+```
+
+Then your Docker daemon may not be properly configured to allow non-root access. To allowlist your account for access to
+the Docker daemon, run:
+
+```sh
+sudo usermod -aG docker $USER
+```
+
+### Git Submodules
+
+This repository makes use of [Git submodules](https://git-scm.com/book/en/v2/Git-Tools-Submodules). The first time you
+clone the repository, you will also need to initialize the submodules:
+
+```sh
+git submodule update --init --recursive
+```
+
 ### Linux/Unix
 
 #### Testing Different Linux Distros and Architectures
