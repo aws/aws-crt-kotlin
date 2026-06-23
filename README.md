@@ -17,8 +17,9 @@ CRT interfaces are subject to change.
 
 ### Docker
 
-Building CRT requires Docker images to be locally built and consumed. Before running the Gradle build for this project,
-ensure that Docker is installed (or a compatible client like podman or finch) and run:
+Building CRT for Kotlin/Native on Linux or Windows requires Docker images to be locally built and consumed. Before
+running the Gradle build for this project, ensure that Docker is installed (or a compatible client like podman or finch)
+and run:
 
 ```sh
 ./docker-images/build-all.sh
