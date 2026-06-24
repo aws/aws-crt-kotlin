@@ -33,8 +33,13 @@ val optinAnnotations = listOf("kotlin.RequiresOptIn", "kotlinx.cinterop.Experime
 // KMP configuration from build plugin
 configureKmpTargets()
 
-if (NATIVE_ENABLED && HostManager.hostIsMingw) {
-    findMingwHome() // fail fast
+// Fail fast checks
+if (NATIVE_ENABLED) {
+    if (HostManager.hostIsMingw) {
+        findMingwHome()
+    }
+
+    verifyOnPath("cmake")
 }
 
 kotlin {
@@ -234,5 +239,30 @@ private fun findMingwHome(): String = System.getenv("MINGW_PREFIX")?.takeUnless 
     ?: typedProp("mingw.prefix")
     ?: throw IllegalStateException(
         "Cannot determine MinGW prefix location. Please verify MinGW is installed correctly " +
-            "and that either the `MINGW_PREFIX` environment variable or the `mingw.prefix` Gradle property is set.",
+            "and that either the `MINGW_PREFIX` environment variable or the `mingw.prefix` Gradle property is set. " +
+            "See the project README.md for more information about building on Windows.",
     )
+
+private fun verifyOnPath(executable: String) {
+    if (findOnPath(executable) == null) {
+        throw IllegalStateException(
+            "Cannot find required executable `$executable` on the system `PATH`. Please verify it is installed " +
+                "correctly and is accessible in the terminal. See the project README.md for more information about " +
+                "prerequisites for building this project."
+        )
+    }
+}
+
+fun findOnPath(executable: String): File? {
+    val pathDirs = System.getenv("PATH")
+        ?.split(File.pathSeparator)
+        ?.map(::File)
+        ?: return null
+
+    // On Windows, executables may have these extensions
+    val extensions = if (HostManager.hostIsMingw) listOf("", ".exe", ".cmd", ".bat") else listOf("")
+
+    return pathDirs
+        .flatMap { dir -> extensions.map { ext -> File(dir, "$executable$ext") } }
+        .firstOrNull { it.isFile && it.canExecute() }
+}
