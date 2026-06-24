@@ -9,7 +9,7 @@ coroutines-version = "1.11.0"
 binary-compatibility-validator-version = "0.18.1"
 
 # testing
-okhttp-version = "5.3.2"
+okhttp-version = "5.4.0"
 
 [libraries]
 aws-kotlin-repo-tools-build-support = { module="aws.sdk.kotlin.gradle:build-support", version.ref = "aws-kotlin-repo-tools-version" }
