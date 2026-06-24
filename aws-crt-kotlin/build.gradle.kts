@@ -119,6 +119,7 @@ kotlin {
 
                 val mingwLibs = Paths.get(mingwHome, "lib").toString().replace("\\", "\\\\") // Windows path shenanigans
 
+                // WINAPI_FAMILY values defined here: https://github.com/mingw-w64/mingw-w64/blob/7c72b740e1f2c735c6e3e5f436d3056b16c616ec/mingw-w64-headers/include/winapifamily.h
                 doLast {
                     Files.writeString(
                         defPath.get().asFile.toPath(),
@@ -129,7 +130,6 @@ kotlin {
                                 -DUNICODE \
                                 -DWINVER=0x0601 \
                                 -D_WIN32_WINNT=0x0601 \
-                                # WINAPI_FAMILY values defined here: https://github.com/mingw-w64/mingw-w64/blob/7c72b740e1f2c735c6e3e5f436d3056b16c616ec/mingw-w64-headers/include/winapifamily.h
                                 -DWINAPI_FAMILY=WINAPI_FAMILY_DESKTOP_APP \
                                 -DOEMRESOURCE \
                                 -Wno-incompatible-pointer-types \
