@@ -129,7 +129,7 @@ kotlin {
                                 -DUNICODE \
                                 -DWINVER=0x0601 \
                                 -D_WIN32_WINNT=0x0601 \
-                                -DWINAPI_FAMILY=3 \
+                                -DWINAPI_FAMILY=100 \
                                 -DOEMRESOURCE \
                                 -Wno-incompatible-pointer-types \
                                 -Wno-deprecated-declarations
