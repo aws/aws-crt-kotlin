@@ -33,7 +33,6 @@ else
   IMAGES=(
     "linux-x64"
     "linux-arm64"
-    "mingw-x64"
   )
 fi
 

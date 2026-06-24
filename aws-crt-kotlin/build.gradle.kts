@@ -33,6 +33,10 @@ val optinAnnotations = listOf("kotlin.RequiresOptIn", "kotlinx.cinterop.Experime
 // KMP configuration from build plugin
 configureKmpTargets()
 
+if (NATIVE_ENABLED && HostManager.hostIsMingw) {
+    findMingwHome() // fail fast
+}
+
 kotlin {
     explicitApi()
 

@@ -217,7 +217,6 @@ private fun Project.registerCmakeInstallTask(
 private val containerCompileTargets = setOf(
     KonanTarget.LINUX_X64,
     KonanTarget.LINUX_ARM64,
-    KonanTarget.MINGW_X64,
 )
 
 /**
