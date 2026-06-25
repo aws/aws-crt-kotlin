@@ -104,8 +104,8 @@ See also:
 ### Windows
 
 Building on Windows is slightly trickier and involves more prerequisites to configure the toolchain. There are slightly
-different steps depending on whether you intend to build from an **MSYS2 MinGW64**
-terminal or from a **PowerShell** terminal:
+different steps depending on whether you intend to build from an **MSYS2 MinGW64** terminal or from a **PowerShell**
+terminal:
 
 #### Common Windows steps (terminal agnostic)
 
@@ -115,12 +115,11 @@ terminal or from a **PowerShell** terminal:
   * Note that JDK 26+ is not supported yet due to the Kotlin Gradle plugin
 * [Install MSYS2](https://www.msys2.org/#installation)
 * Launch an **MSYS2 MinGW64** terminal from the Start menu
-* Install the toolchain for MinGW64: `pacman -S mingw-w64-x86_64-cmake mingw-w64-x86_64-toolchain`
+* Install the MinGW64 toolchain: `pacman -S --noconfirm mingw-w64-x86_64-cmake mingw-w64-x86_64-toolchain`
 
 #### Steps to build using MSYS2 MinGW64
 
-After following the [Common Windows steps (terminal agnostic)](#common-windows-steps-terminal-agnostic), in an **MSYS2
-MinGW64** terminal:
+After following the [Common Windows steps (terminal agnostic)](#common-windows-steps-terminal-agnostic), in an **MSYS2 MinGW64** terminal:
 
 * Add Git and the JDK to the `PATH` environment variable:
   * `echo 'export PATH="$PATH:/c/Program Files/Git/bin"' >> ~/.bashrc`

@@ -12,6 +12,7 @@ import org.gradle.kotlin.dsl.named
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.konan.target.HostManager
 import org.jetbrains.kotlin.konan.target.KonanTarget
+import java.io.File
 
 /**
  * See [CMAKE_BUILD_TYPE](https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html)
@@ -42,6 +43,11 @@ fun Project.configureCrtCMakeBuild(
     knTarget: KotlinNativeTarget,
     buildType: CMakeBuildType = CMakeBuildType.RelWithDebInfo,
 ): TaskProvider<Task> {
+    val (cmakeInvocationExe, _) = cmakeInvocation(this, knTarget)
+    if (!cmakeInvocationExe.startsWith("./")) {
+        verifyOnPath(cmakeInvocationExe)
+    }
+
     val cmakeConfigure = registerCmakeConfigureTask(knTarget, buildType)
 
     val cmakeBuild = registerCmakeBuildTask(knTarget, buildType)
@@ -226,6 +232,40 @@ private val requiresExplicitBash = setOf(
     KonanTarget.MINGW_X64,
 )
 
+private fun cmakeInvocation(
+    project: Project,
+    target: KotlinNativeTarget,
+    cmakeArgs: List<String>? = null,
+): Pair<String, List<String>> {
+    val disableContainerTargets = (project.properties["aws.crt.disableContainerTargets"] as? String ?: "")
+        .split(',')
+        .map { it.trim() }
+        .toSet()
+
+    val useContainer = target.konanTarget in containerCompileTargets &&
+        target.konanTarget.name !in disableContainerTargets
+
+    val exeArgs = cmakeArgs.orEmpty().toMutableList()
+    val exeName = if (useContainer) {
+        // cross compiling via dockcross - set the docker exe to cmake
+        val containerScriptArgs = listOf("--args", "--pull=missing", "--", "cmake")
+        exeArgs.addAll(0, containerScriptArgs)
+        val script = "dockcross-" + target.konanTarget.name.replace("_", "-")
+        validateCrossCompileScriptsAvailable(project, script)
+
+        if (target.konanTarget in requiresExplicitBash) {
+            exeArgs.add(0, "./$script")
+            "bash"
+        } else {
+            "./$script"
+        }
+    } else {
+        "cmake"
+    }
+
+    return exeName to exeArgs
+}
+
 private fun runCmake(project: Project, target: KotlinNativeTarget, cmakeArgs: List<String>) {
     val disableContainerTargets = (project.properties["aws.crt.disableContainerTargets"] as? String ?: "")
         .split(',')
@@ -235,27 +275,10 @@ private fun runCmake(project: Project, target: KotlinNativeTarget, cmakeArgs: Li
     val useContainer = target.konanTarget in containerCompileTargets &&
         target.konanTarget.name !in disableContainerTargets
 
+    val (exeName, exeArgs) = cmakeInvocation(project, target, cmakeArgs)
+
     project.providers.exec {
         workingDir(project.rootDir)
-        val exeArgs = cmakeArgs.toMutableList()
-        val exeName = if (useContainer) {
-            // cross compiling via dockcross - set the docker exe to cmake
-            val containerScriptArgs = listOf("--args", "--pull=missing", "--", "cmake")
-            exeArgs.addAll(0, containerScriptArgs)
-            val script = "dockcross-" + target.konanTarget.name.replace("_", "-")
-            validateCrossCompileScriptsAvailable(project, script)
-
-            if (target.konanTarget in requiresExplicitBash) {
-                exeArgs.add(0, "./$script")
-                "bash"
-            } else {
-                "./$script"
-            }
-        } else {
-            "cmake"
-        }
-
-        project.logger.info("$exeName ${exeArgs.joinToString(separator = " ")}")
         executable(exeName)
         args(exeArgs)
     }.result.get() // providers.exec is lazy, so fetch the result here to ensure the command executes
@@ -272,4 +295,28 @@ private fun validateCrossCompileScriptsAvailable(project: Project, script: Strin
         """.trimIndent()
         error(message)
     }
+}
+
+private fun verifyOnPath(executable: String) {
+    if (findOnPath(executable) == null) {
+        throw IllegalStateException(
+            "Cannot find required executable `$executable` on the system `PATH`. Please verify it is installed " +
+                "correctly and is accessible in the terminal. See the project README.md for more information about " +
+                "prerequisites for building this project."
+        )
+    }
+}
+
+private fun findOnPath(executable: String): File? {
+    val extensions = when {
+        HostManager.hostIsMingw -> listOf("", ".exe", ".cmd", ".bat") // Windows executables may have these extensions
+        else -> listOf("") // No automatic extensions for Linux or macOS
+    }
+
+    return System
+        .getenv("PATH")
+        ?.split(File.pathSeparator)
+        ?.map(::File)
+        ?.flatMap { dir -> extensions.map { ext -> File(dir, "$executable$ext") } }
+        ?.firstOrNull { it.isFile && it.canExecute() }
 }
