@@ -9,6 +9,8 @@ import org.gradle.api.Task
 import org.gradle.api.tasks.Delete
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.kotlin.dsl.named
+import org.gradle.kotlin.dsl.support.serviceOf
+import org.gradle.process.ExecOperations
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.konan.target.HostManager
 import org.jetbrains.kotlin.konan.target.KonanTarget
@@ -138,7 +140,7 @@ private fun Project.registerCmakeConfigureTask(
             // We _could_ use the undocumented -H flag but that will be harder to make work inside docker
             args.add(".")
 
-            runCmake(project, knTarget, args)
+            runCmake(project, knTarget, args, name)
         }
     }
 }
@@ -184,7 +186,7 @@ private fun Project.registerCmakeBuildTask(
                 args.add(osxSdk)
             }
 
-            runCmake(project, knTarget, args)
+            runCmake(project, knTarget, args, name)
         }
     }
 }
@@ -210,7 +212,7 @@ private fun Project.registerCmakeInstallTask(
                 "--config",
                 buildType.toString(),
             )
-            runCmake(project, knTarget, args)
+            runCmake(project, knTarget, args, name)
         }
     }
 }
@@ -266,22 +268,69 @@ private fun cmakeInvocation(
     return exeName to exeArgs
 }
 
-private fun runCmake(project: Project, target: KotlinNativeTarget, cmakeArgs: List<String>) {
-    val disableContainerTargets = (project.properties["aws.crt.disableContainerTargets"] as? String ?: "")
-        .split(',')
-        .map { it.trim() }
-        .toSet()
-
-    val useContainer = target.konanTarget in containerCompileTargets &&
-        target.konanTarget.name !in disableContainerTargets
-
+private fun runCmake(
+    project: Project,
+    target: KotlinNativeTarget,
+    cmakeArgs: List<String>,
+    logName: String,
+) {
     val (exeName, exeArgs) = cmakeInvocation(project, target, cmakeArgs)
+    val commandLine = "$exeName ${exeArgs.joinToString(separator = " ")}"
+    project.logger.info(commandLine)
 
-    project.providers.exec {
-        workingDir(project.rootDir)
-        executable(exeName)
-        args(exeArgs)
-    }.result.get() // providers.exec is lazy, so fetch the result here to ensure the command executes
+    val logDir = project.rootProject.layout.buildDirectory.dir("crt-logs").get().asFile
+    logDir.mkdirs()
+    val logFile = logDir.resolve("$logName.log")
+
+    val execOps = project.serviceOf<ExecOperations>()
+
+    // Stream stdout + stderr (interleaved, preserving ordering) directly to the per-task log file
+    // so we don't buffer potentially large CMake/compiler output in memory.
+    val result = logFile.outputStream().buffered().use { logStream ->
+        execOps.exec {
+            workingDir(project.rootDir)
+            executable(exeName)
+            args(exeArgs)
+            standardOutput = logStream
+            errorOutput = logStream
+            // Don't throw on a non-zero exit; we surface diagnostics ourselves before failing the build.
+            isIgnoreExitValue = true
+        }
+    }
+
+    if (result.exitValue != 0) {
+        project.logger.error(
+            buildString {
+                appendLine("CRT external command failed (exit code ${result.exitValue}): $commandLine")
+                appendLine("Full output log: ${logFile.absolutePath}")
+                appendLine("--- last $LOG_TAIL_LINES lines of ${logFile.name} ---")
+                append(logFile.tailLines(LOG_TAIL_LINES))
+            },
+        )
+        // Reproduce the default exec behaviour: fail the build with an ExecException.
+        result.assertNormalExitValue()
+    } else {
+        project.logger.lifecycle("CRT external command succeeded: $commandLine\nOutput log: ${logFile.absolutePath}")
+    }
+}
+
+/**
+ * Number of trailing lines of a failed command's log file to echo to the Gradle console.
+ */
+private const val LOG_TAIL_LINES = 50
+
+/**
+ * Returns the last [n] lines of this file, keeping at most [n] lines in memory at a time.
+ */
+private fun File.tailLines(n: Int): String {
+    val ring = ArrayDeque<String>(n)
+    useLines { lines ->
+        lines.forEach { line ->
+            if (ring.size == n) ring.removeFirst()
+            ring.addLast(line)
+        }
+    }
+    return ring.joinToString(System.lineSeparator())
 }
 
 private fun validateCrossCompileScriptsAvailable(project: Project, script: String) {
