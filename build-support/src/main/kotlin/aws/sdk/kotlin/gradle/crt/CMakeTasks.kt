@@ -45,6 +45,8 @@ fun Project.configureCrtCMakeBuild(
     knTarget: KotlinNativeTarget,
     buildType: CMakeBuildType = CMakeBuildType.RelWithDebInfo,
 ): TaskProvider<Task> {
+    verifyGitSubmodulesInitialized(this)
+
     val (cmakeInvocationExe, _) = cmakeInvocation(this, knTarget)
     if (!cmakeInvocationExe.startsWith("./")) {
         verifyOnPath(cmakeInvocationExe)
@@ -343,6 +345,45 @@ private fun validateCrossCompileScriptsAvailable(project: Project, script: Strin
         e.g. `./docker-images/build-all.sh`
         """.trimIndent()
         error(message)
+    }
+}
+
+/**
+ * Verifies that the Git submodules containing the AWS Common Runtime C sources are checked out. The submodules are
+ * declared in `.gitmodules` at the repository root; an uninitialized submodule leaves an empty directory behind, so
+ * each declared path is checked for existence and non-empty contents.
+ */
+private fun verifyGitSubmodulesInitialized(project: Project) {
+    val rootDir = project.rootProject.projectDir
+    val gitModulesFile = rootDir.resolve(".gitmodules")
+
+    // If there's no .gitmodules there's nothing to verify (e.g. building from a source archive).
+    if (!gitModulesFile.isFile) return
+
+    val uninitializedPaths = gitModulesFile
+        .readLines()
+        .map { it.trim() }
+        .filter { it.startsWith("path =") }
+        .map { it.substringAfter("path =").trim() }
+        .filter { path ->
+            val dir = rootDir.resolve(path)
+            val contents = dir.listFiles()
+            !dir.isDirectory || contents == null || contents.isEmpty()
+        }
+
+    if (uninitializedPaths.isNotEmpty()) {
+        throw IllegalStateException(
+            buildString {
+                appendLine("The following required Git submodule(s) missing or uninitialized:")
+                uninitializedPaths.forEach { appendLine("- $it") }
+                appendLine()
+                appendLine("Initialize and update all submodules by running the following from the repository root:")
+                appendLine()
+                appendLine("    git submodule update --init --recursive")
+                appendLine()
+                appendLine("See the project README.md for more information about prerequisites for lthis project.")
+            },
+        )
     }
 }
 
