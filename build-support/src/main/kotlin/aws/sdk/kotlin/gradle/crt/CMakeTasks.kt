@@ -390,15 +390,18 @@ private fun verifyOnPath(executable: String) {
         throw IllegalStateException(
             "Cannot find required executable `$executable` on the system `PATH`. Please verify it is installed " +
                 "correctly and is accessible in the terminal. See the project README.md for more information about " +
-                "prerequisites for building this project."
+                "prerequisites for building this project.",
         )
     }
 }
 
 private fun findOnPath(executable: String): File? {
     val extensions = when {
-        HostManager.hostIsMingw -> listOf("", ".exe", ".cmd", ".bat") // Windows executables may have these extensions
-        else -> listOf("") // No automatic extensions for Linux or macOS
+        // Windows executables may have these extensions
+        HostManager.hostIsMingw -> listOf("", ".exe", ".cmd", ".bat")
+
+        // No automatic extensions for Linux or macOS
+        else -> listOf("")
     }
 
     return System
