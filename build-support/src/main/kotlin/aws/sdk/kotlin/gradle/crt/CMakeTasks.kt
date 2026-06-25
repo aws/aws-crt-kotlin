@@ -280,7 +280,7 @@ private fun runCmake(
     val commandLine = "$exeName ${exeArgs.joinToString(separator = " ")}"
     project.logger.info(commandLine)
 
-    val logDir = project.rootProject.layout.buildDirectory.dir("crt-logs").get().asFile
+    val logDir = project.rootProject.layout.buildDirectory.dir("cmake-logs").get().asFile
     logDir.mkdirs()
     val logFile = logDir.resolve("$logName.log")
 
@@ -374,10 +374,10 @@ private fun verifyGitSubmodulesInitialized(project: Project) {
     if (uninitializedPaths.isNotEmpty()) {
         throw IllegalStateException(
             buildString {
-                appendLine("The following required Git submodule(s) missing or uninitialized:")
+                appendLine("The following required Git submodule(s) are missing or uninitialized:")
                 uninitializedPaths.forEach { appendLine("- $it") }
                 appendLine()
-                appendLine("Initialize and update all submodules by running the following from the repository root:")
+                appendLine("Initialize and update all submodules by running this command from the repository root:")
                 appendLine()
                 appendLine("    git submodule update --init --recursive")
                 appendLine()
