@@ -14,12 +14,12 @@ SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
 PROJ_ROOT=$(realpath "$SCRIPT_DIR/..")
 
 if [ -z "$OCI_EXE" ]; then
-    if which finch > /dev/null 2>/dev/null; then
-      OCI_EXE=finch
+    if which docker >/dev/null 2>/dev/null; then
+        OCI_EXE=docker
+    elif which finch > /dev/null 2>/dev/null; then
+        OCI_EXE=finch
     elif which podman >/dev/null 2>/dev/null; then
         OCI_EXE=podman
-    elif which docker >/dev/null 2>/dev/null; then
-        OCI_EXE=docker
     else
         die "Cannot find a container executor. Search for docker and podman."
     fi
