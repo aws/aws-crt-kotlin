@@ -45,13 +45,6 @@ fun Project.configureCrtCMakeBuild(
     knTarget: KotlinNativeTarget,
     buildType: CMakeBuildType = CMakeBuildType.RelWithDebInfo,
 ): TaskProvider<Task> {
-    verifyGitSubmodulesInitialized()
-
-    val (cmakeInvocationExe, _) = cmakeInvocation(knTarget)
-    if (!cmakeInvocationExe.startsWith("./")) {
-        verifyOnPath(cmakeInvocationExe)
-    }
-
     val cmakeConfigure = registerCmakeConfigureTask(knTarget, buildType)
 
     val cmakeBuild = registerCmakeBuildTask(knTarget, buildType)
@@ -64,10 +57,18 @@ fun Project.configureCrtCMakeBuild(
         dependsOn(cmakeBuild)
     }
 
+    val verifySubmodules = registerVerifyGitSubmodulesTask()
+    val verifyExecutable = registerVerifyExecutableOnPathTask(knTarget)
+
     // only enable cmake* tasks if that target is enabled
     val hm = HostManager()
     listOf(cmakeConfigure, cmakeBuild, cmakeInstall).forEach { task ->
         task.configure {
+            // Verify prerequisites are satisfied before any CMake task runs. Wiring these as task dependencies
+            // (rather than configuration-time checks) ensures they only execute when a CMake task is actually
+            // part of the build (e.g. not for a JVM-only build). `verifySubmodules` is shared across targets;
+            // `verifyExecutable` is per-target since the required executable differs by target.
+            dependsOn(verifySubmodules, verifyExecutable)
             onlyIf {
                 hm.isEnabled(knTarget.konanTarget)
             }
@@ -343,6 +344,54 @@ private fun Project.validateCrossCompileScriptsAvailable(script: String) {
         e.g. `./docker-images/build-all.sh`
         """.trimIndent()
         error(message)
+    }
+}
+
+/**
+ * Registers a per-target task that verifies the executable required to build CRT for [knTarget] is available. The
+ * required executable differs by target (e.g. `cmake` for host builds, `bash` for MinGW, or a local `./dockcross-*`
+ * script for containerized cross-compilation), so a distinct task is registered per target.
+ */
+private fun Project.registerVerifyExecutableOnPathTask(knTarget: KotlinNativeTarget): TaskProvider<Task> = tasks
+    .register(knTarget.namedSuffix("verifyCrtExecutable", capitalized = true)) {
+        group = "ffi"
+        description = "Verifies the executable required to build CRT for ${knTarget.name} is available on the PATH."
+
+        // Only relevant when the target is buildable on this host; mirror the gating of the CMake tasks so this
+        // prerequisite isn't evaluated for a disabled target.
+        onlyIf {
+            HostManager().isEnabled(knTarget.konanTarget)
+        }
+
+        doLast {
+            val (exe, _) = cmakeInvocation(knTarget)
+            // Containerized builds invoke a local `./dockcross-*` script (whose existence is validated by
+            // cmakeInvocation); only executables resolved via the PATH (e.g. `cmake`, `bash`) need a PATH check.
+            if (!exe.startsWith("./")) {
+                verifyOnPath(exe)
+            }
+        }
+    }
+
+/**
+ * Name of the shared task that verifies the CRT Git submodules are initialized. A single instance is shared across all
+ * native targets so the check runs at most once per build.
+ */
+private const val VERIFY_SUBMODULES_TASK_NAME = "verifyCrtGitSubmodules"
+
+/**
+ * Registers (or returns the already-registered) task that verifies the CRT Git submodules are initialized. Registering
+ * is idempotent because [configureCrtCMakeBuild] is invoked once per native target on the same project.
+ */
+private fun Project.registerVerifyGitSubmodulesTask(): TaskProvider<Task> = when {
+    VERIFY_SUBMODULES_TASK_NAME in tasks.names -> tasks.named(VERIFY_SUBMODULES_TASK_NAME)
+
+    else -> tasks.register(VERIFY_SUBMODULES_TASK_NAME) {
+        group = "ffi"
+        description = "Verifies that the Git submodules required to build the AWS Common Runtime are initialized."
+        doLast {
+            verifyGitSubmodulesInitialized()
+        }
     }
 }
 
