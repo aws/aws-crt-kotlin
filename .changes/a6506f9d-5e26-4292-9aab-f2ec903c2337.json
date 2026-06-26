@@ -1,0 +1,6 @@
+{
+  "id": "a6506f9d-5e26-4292-9aab-f2ec903c2337",
+  "type": "feature",
+  "description": "Upgrade to Kotlin 2.4.0",
+  "requiresMinorVersionBump": true
+}
