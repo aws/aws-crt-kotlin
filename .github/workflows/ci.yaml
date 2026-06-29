@@ -16,6 +16,7 @@ env:
 
 permissions:
   contents: read
+  id-token: read
 
 jobs:
   jvm:
@@ -114,7 +115,7 @@ jobs:
             ./docker-images/build-images.sh linux-x64 linux-arm64
           on_retry_command: |
             echo "Docker image build failed. Waiting for 10s before trying again..."
-            sleep 10          
+            sleep 10        
 
       - name: Build and Test ${{ env.PACKAGE_NAME }}
         run: |
