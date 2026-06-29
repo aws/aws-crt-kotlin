@@ -111,6 +111,7 @@ jobs:
         with:
           max_attempts: 3
           retry_on: error
+          timeout_minutes: 30
           command: |
             ./docker-images/build-images.sh linux-x64 linux-arm64
           on_retry_command: |
