@@ -9,9 +9,12 @@ import org.gradle.api.Task
 import org.gradle.api.tasks.Delete
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.kotlin.dsl.named
+import org.gradle.kotlin.dsl.support.serviceOf
+import org.gradle.process.ExecOperations
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.konan.target.HostManager
 import org.jetbrains.kotlin.konan.target.KonanTarget
+import java.io.File
 
 /**
  * See [CMAKE_BUILD_TYPE](https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html)
@@ -54,10 +57,18 @@ fun Project.configureCrtCMakeBuild(
         dependsOn(cmakeBuild)
     }
 
+    val verifySubmodules = registerVerifyGitSubmodulesTask()
+    val verifyExecutable = registerVerifyExecutableOnPathTask(knTarget)
+
     // only enable cmake* tasks if that target is enabled
     val hm = HostManager()
     listOf(cmakeConfigure, cmakeBuild, cmakeInstall).forEach { task ->
         task.configure {
+            // Verify prerequisites are satisfied before any CMake task runs. Wiring these as task dependencies
+            // (rather than configuration-time checks) ensures they only execute when a CMake task is actually
+            // part of the build (e.g. not for a JVM-only build). `verifySubmodules` is shared across targets;
+            // `verifyExecutable` is per-target since the required executable differs by target.
+            dependsOn(verifySubmodules, verifyExecutable)
             onlyIf {
                 hm.isEnabled(knTarget.konanTarget)
             }
@@ -66,8 +77,8 @@ fun Project.configureCrtCMakeBuild(
 
     // TODO - add separate `cleanCMake<KN-Target>` tasks and make the parent `clean` task depend on the individuals
     tasks.named<Delete>("clean") {
-        delete(project.rootProject.layout.buildDirectory.dir("cmake-build"))
-        delete(project.rootProject.layout.buildDirectory.dir("crt-libs"))
+        delete(rootProject.layout.buildDirectory.dir("cmake-build"))
+        delete(rootProject.layout.buildDirectory.dir("crt-libs"))
     }
 
     return cmakeInstall
@@ -77,14 +88,14 @@ private fun Project.registerCmakeConfigureTask(
     knTarget: KotlinNativeTarget,
     buildType: CMakeBuildType,
 ): TaskProvider<Task> {
-    val cmakeBuildDir = project.cmakeBuildDir(knTarget)
-    val installDir = project.cmakeInstallDir(knTarget)
+    val cmakeBuildDir = cmakeBuildDir(knTarget)
+    val installDir = cmakeInstallDir(knTarget)
 
-    val relativeBuildDir = cmakeBuildDir.relativeTo(project.rootDir).slashPath
-    val relativeInstallDir = installDir.relativeTo(project.rootDir).slashPath
-    val cmakeLists = project.rootProject.projectDir.resolve("CMakeLists.txt")
+    val relativeBuildDir = cmakeBuildDir.relativeTo(rootDir).slashPath
+    val relativeInstallDir = installDir.relativeTo(rootDir).slashPath
+    val cmakeLists = rootProject.projectDir.resolve("CMakeLists.txt")
 
-    return project.tasks.register(knTarget.cmakeConfigureTaskName) {
+    return tasks.register(knTarget.cmakeConfigureTaskName) {
         group = "ffi"
 
         inputs.property("buildType", buildType.toString())
@@ -132,7 +143,7 @@ private fun Project.registerCmakeConfigureTask(
             // We _could_ use the undocumented -H flag but that will be harder to make work inside docker
             args.add(".")
 
-            runCmake(project, knTarget, args)
+            runCmake(knTarget, args, name)
         }
     }
 }
@@ -141,14 +152,14 @@ private fun Project.registerCmakeBuildTask(
     knTarget: KotlinNativeTarget,
     buildType: CMakeBuildType,
 ): TaskProvider<Task> {
-    val cmakeBuildDir = project.cmakeBuildDir(knTarget)
-    val relativeBuildDir = cmakeBuildDir.relativeTo(project.rootDir).slashPath
+    val cmakeBuildDir = cmakeBuildDir(knTarget)
+    val relativeBuildDir = cmakeBuildDir.relativeTo(rootDir).slashPath
 
-    return project.tasks.register(knTarget.cmakeBuildTaskName) {
+    return tasks.register(knTarget.cmakeBuildTaskName) {
         group = "ffi"
 
         inputs.property("buildType", buildType.toString())
-        inputs.file(project.cmakeLists)
+        inputs.file(cmakeLists)
         inputs.files(
             fileTree("$rootDir/crt").matching {
                 include(listOf("**/CMakeLists.txt", "**/*.c", "**/*.h"))
@@ -158,7 +169,7 @@ private fun Project.registerCmakeBuildTask(
         outputs.dir(cmakeBuildDir)
 
         doLast {
-            val coresPlusOne = (Runtime.getRuntime().availableProcessors().toInt() + 1).toString()
+            val coresPlusOne = (Runtime.getRuntime().availableProcessors() + 1).toString()
 
             val args = mutableListOf(
                 "--build",
@@ -178,7 +189,7 @@ private fun Project.registerCmakeBuildTask(
                 args.add(osxSdk)
             }
 
-            runCmake(project, knTarget, args)
+            runCmake(knTarget, args, name)
         }
     }
 }
@@ -187,14 +198,14 @@ private fun Project.registerCmakeInstallTask(
     knTarget: KotlinNativeTarget,
     buildType: CMakeBuildType,
 ): TaskProvider<Task> {
-    val cmakeBuildDir = project.cmakeBuildDir(knTarget)
-    val relativeBuildDir = cmakeBuildDir.relativeTo(project.rootDir).slashPath
-    val installDir = project.cmakeInstallDir(knTarget)
+    val cmakeBuildDir = cmakeBuildDir(knTarget)
+    val relativeBuildDir = cmakeBuildDir.relativeTo(rootDir).slashPath
+    val installDir = cmakeInstallDir(knTarget)
 
-    return project.tasks.register(knTarget.cmakeInstallTaskName) {
+    return tasks.register(knTarget.cmakeInstallTaskName) {
         group = "ffi"
 
-        inputs.file(project.cmakeLists)
+        inputs.file(cmakeLists)
         outputs.dir(installDir)
 
         doLast {
@@ -204,7 +215,7 @@ private fun Project.registerCmakeInstallTask(
                 "--config",
                 buildType.toString(),
             )
-            runCmake(project, knTarget, args)
+            runCmake(knTarget, args, name)
         }
     }
 }
@@ -217,7 +228,6 @@ private fun Project.registerCmakeInstallTask(
 private val containerCompileTargets = setOf(
     KonanTarget.LINUX_X64,
     KonanTarget.LINUX_ARM64,
-    KonanTarget.MINGW_X64,
 )
 
 /**
@@ -227,8 +237,11 @@ private val requiresExplicitBash = setOf(
     KonanTarget.MINGW_X64,
 )
 
-private fun runCmake(project: Project, target: KotlinNativeTarget, cmakeArgs: List<String>) {
-    val disableContainerTargets = (project.properties["aws.crt.disableContainerTargets"] as? String ?: "")
+private fun Project.cmakeInvocation(
+    target: KotlinNativeTarget,
+    cmakeArgs: List<String>? = null,
+): Pair<String, List<String>> {
+    val disableContainerTargets = (properties["aws.crt.disableContainerTargets"] as? String ?: "")
         .split(',')
         .map { it.trim() }
         .toSet()
@@ -236,34 +249,93 @@ private fun runCmake(project: Project, target: KotlinNativeTarget, cmakeArgs: Li
     val useContainer = target.konanTarget in containerCompileTargets &&
         target.konanTarget.name !in disableContainerTargets
 
-    project.providers.exec {
-        workingDir(project.rootDir)
-        val exeArgs = cmakeArgs.toMutableList()
-        val exeName = if (useContainer) {
-            // cross compiling via dockcross - set the docker exe to cmake
-            val containerScriptArgs = listOf("--args", "--pull=missing", "--", "cmake")
-            exeArgs.addAll(0, containerScriptArgs)
-            val script = "dockcross-" + target.konanTarget.name.replace("_", "-")
-            validateCrossCompileScriptsAvailable(project, script)
+    val exeArgs = cmakeArgs.orEmpty().toMutableList()
+    val exeName = if (useContainer) {
+        // cross compiling via dockcross - set the docker exe to cmake
+        val containerScriptArgs = listOf("--args", "--pull=missing", "--", "cmake")
+        exeArgs.addAll(0, containerScriptArgs)
+        val script = "dockcross-" + target.konanTarget.name.replace("_", "-")
+        validateCrossCompileScriptsAvailable(script)
 
-            if (target.konanTarget in requiresExplicitBash) {
-                exeArgs.add(0, "./$script")
-                "bash"
-            } else {
-                "./$script"
-            }
+        if (target.konanTarget in requiresExplicitBash) {
+            exeArgs.add(0, "./$script")
+            "bash"
         } else {
-            "cmake"
+            "./$script"
         }
+    } else {
+        "cmake"
+    }
 
-        project.logger.info("$exeName ${exeArgs.joinToString(separator = " ")}")
-        executable(exeName)
-        args(exeArgs)
-    }.result.get() // providers.exec is lazy, so fetch the result here to ensure the command executes
+    return exeName to exeArgs
 }
 
-private fun validateCrossCompileScriptsAvailable(project: Project, script: String) {
-    val scriptFile = project.rootProject.file(script)
+private fun Project.runCmake(
+    target: KotlinNativeTarget,
+    cmakeArgs: List<String>,
+    logName: String,
+) {
+    val (exeName, exeArgs) = cmakeInvocation(target, cmakeArgs)
+    val commandLine = "$exeName ${exeArgs.joinToString(separator = " ")}"
+    logger.info(commandLine)
+
+    val logDir = rootProject.layout.buildDirectory.dir("cmake-logs").get().asFile
+    logDir.mkdirs()
+    val logFile = logDir.resolve("$logName.log")
+
+    val execOps = serviceOf<ExecOperations>()
+
+    // Stream stdout + stderr (interleaved, preserving ordering) directly to the per-task log file
+    // so we don't buffer potentially large CMake/compiler output in memory.
+    val result = logFile.outputStream().buffered().use { logStream ->
+        execOps.exec {
+            workingDir(rootDir)
+            executable(exeName)
+            args(exeArgs)
+            standardOutput = logStream
+            errorOutput = logStream
+            // Don't throw on a non-zero exit; we surface diagnostics ourselves before failing the build.
+            isIgnoreExitValue = true
+        }
+    }
+
+    if (result.exitValue != 0) {
+        logger.error(
+            buildString {
+                appendLine("CRT external command failed (exit code ${result.exitValue}): $commandLine")
+                appendLine("Full output log: ${logFile.absolutePath}")
+                appendLine("--- last $LOG_TAIL_LINES lines of ${logFile.name} ---")
+                append(logFile.tailLines(LOG_TAIL_LINES))
+            },
+        )
+        // Reproduce the default exec behaviour: fail the build with an ExecException.
+        result.assertNormalExitValue()
+    } else {
+        logger.lifecycle("CRT external command succeeded: $commandLine\nOutput log: ${logFile.absolutePath}")
+    }
+}
+
+/**
+ * Number of trailing lines of a failed command's log file to echo to the Gradle console.
+ */
+private const val LOG_TAIL_LINES = 50
+
+/**
+ * Returns the last [n] lines of this file, keeping at most [n] lines in memory at a time.
+ */
+private fun File.tailLines(n: Int): String {
+    val ring = ArrayDeque<String>(n)
+    useLines { lines ->
+        lines.forEach { line ->
+            if (ring.size == n) ring.removeFirst()
+            ring.addLast(line)
+        }
+    }
+    return ring.joinToString(System.lineSeparator())
+}
+
+private fun Project.validateCrossCompileScriptsAvailable(script: String) {
+    val scriptFile = rootProject.file(script)
     if (!scriptFile.exists()) {
         val message = """
         dockcross script: `$scriptFile` does not exist! Try re-building the relevant docker image(s) and generating
@@ -273,4 +345,118 @@ private fun validateCrossCompileScriptsAvailable(project: Project, script: Strin
         """.trimIndent()
         error(message)
     }
+}
+
+/**
+ * Registers a per-target task that verifies the executable required to build CRT for [knTarget] is available. The
+ * required executable differs by target (e.g. `cmake` for host builds, `bash` for MinGW, or a local `./dockcross-*`
+ * script for containerized cross-compilation), so a distinct task is registered per target.
+ */
+private fun Project.registerVerifyExecutableOnPathTask(knTarget: KotlinNativeTarget): TaskProvider<Task> = tasks
+    .register(knTarget.namedSuffix("verifyCrtExecutable", capitalized = true)) {
+        group = "ffi"
+        description = "Verifies the executable required to build CRT for ${knTarget.name} is available on the PATH."
+
+        // Only relevant when the target is buildable on this host; mirror the gating of the CMake tasks so this
+        // prerequisite isn't evaluated for a disabled target.
+        onlyIf {
+            HostManager().isEnabled(knTarget.konanTarget)
+        }
+
+        doLast {
+            val (exe, _) = cmakeInvocation(knTarget)
+            // Containerized builds invoke a local `./dockcross-*` script (whose existence is validated by
+            // cmakeInvocation); only executables resolved via the PATH (e.g. `cmake`, `bash`) need a PATH check.
+            if (!exe.startsWith("./")) {
+                verifyOnPath(exe)
+            }
+        }
+    }
+
+/**
+ * Name of the shared task that verifies the CRT Git submodules are initialized. A single instance is shared across all
+ * native targets so the check runs at most once per build.
+ */
+private const val VERIFY_SUBMODULES_TASK_NAME = "verifyCrtGitSubmodules"
+
+/**
+ * Registers (or returns the already-registered) task that verifies the CRT Git submodules are initialized. Registering
+ * is idempotent because [configureCrtCMakeBuild] is invoked once per native target on the same project.
+ */
+private fun Project.registerVerifyGitSubmodulesTask(): TaskProvider<Task> = when {
+    VERIFY_SUBMODULES_TASK_NAME in tasks.names -> tasks.named(VERIFY_SUBMODULES_TASK_NAME)
+
+    else -> tasks.register(VERIFY_SUBMODULES_TASK_NAME) {
+        group = "ffi"
+        description = "Verifies that the Git submodules required to build the AWS Common Runtime are initialized."
+        doLast {
+            verifyGitSubmodulesInitialized()
+        }
+    }
+}
+
+/**
+ * Verifies that the Git submodules containing the AWS Common Runtime C sources are checked out. The submodules are
+ * declared in `.gitmodules` at the repository root; an uninitialized submodule leaves an empty directory behind, so
+ * each declared path is checked for existence and non-empty contents.
+ */
+private fun Project.verifyGitSubmodulesInitialized() {
+    val rootDir = rootProject.projectDir
+    val gitModulesFile = rootDir.resolve(".gitmodules")
+
+    // If there's no .gitmodules there's nothing to verify (e.g. building from a source archive).
+    if (!gitModulesFile.isFile) return
+
+    val uninitializedPaths = gitModulesFile
+        .readLines()
+        .map { it.trim() }
+        .filter { it.startsWith("path =") }
+        .map { it.substringAfter("path =").trim() }
+        .filter { path ->
+            val dir = rootDir.resolve(path)
+            val contents = dir.listFiles()
+            !dir.isDirectory || contents == null || contents.isEmpty()
+        }
+
+    if (uninitializedPaths.isNotEmpty()) {
+        throw IllegalStateException(
+            buildString {
+                appendLine("The following required Git submodule(s) are missing or uninitialized:")
+                uninitializedPaths.forEach { appendLine("- $it") }
+                appendLine()
+                appendLine("Initialize and update all submodules by running this command from the repository root:")
+                appendLine()
+                appendLine("    git submodule update --init --recursive")
+                appendLine()
+                appendLine("See the project README.md for more information about prerequisites for this project.")
+            },
+        )
+    }
+}
+
+private fun verifyOnPath(executable: String) {
+    if (findOnPath(executable) == null) {
+        throw IllegalStateException(
+            "Cannot find required executable `$executable` on the system `PATH`. Please verify it is installed " +
+                "correctly and is accessible in the terminal. See the project README.md for more information about " +
+                "prerequisites for building this project.",
+        )
+    }
+}
+
+private fun findOnPath(executable: String): File? {
+    val extensions = when {
+        // Windows executables may have these extensions
+        HostManager.hostIsMingw -> listOf("", ".exe", ".cmd", ".bat")
+
+        // No automatic extensions for Linux or macOS
+        else -> listOf("")
+    }
+
+    return System
+        .getenv("PATH")
+        ?.split(File.pathSeparator)
+        ?.map(::File)
+        ?.flatMap { dir -> extensions.map { ext -> File(dir, "$executable$ext") } }
+        ?.firstOrNull { it.isFile && it.canExecute() }
 }
