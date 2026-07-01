@@ -14,6 +14,8 @@ SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
 PROJ_ROOT=$(realpath "$SCRIPT_DIR/..")
 
 if [ -z "$OCI_EXE" ]; then
+    # Select which container exe to use based on which implementation is found on system `PATH`. The ordering below
+    # (podman, docker, finch) matches the ordering in the dockcross runner scripts generated below.
     if which podman >/dev/null 2>/dev/null; then
         OCI_EXE=podman
     elif which docker >/dev/null 2>/dev/null; then
@@ -26,6 +28,9 @@ if [ -z "$OCI_EXE" ]; then
 fi
 
 echo "using container executor OCI_EXE=$OCI_EXE"
+
+echo "Authenticating to Public ECR:"
+aws ecr-public get-login-password --region us-east-1 | $OCI_EXE login --username AWS --password-stdin public.ecr.aws
 
 if [ "$#" -gt 0 ]; then
   IMAGES=("$@")
