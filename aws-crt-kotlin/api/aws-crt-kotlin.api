@@ -194,7 +194,7 @@ public final class aws/sdk/kotlin/crt/auth/credentials/ProfileCredentialsProvide
 
 public final class aws/sdk/kotlin/crt/auth/credentials/StaticCredentialsProvider : aws/sdk/kotlin/crt/auth/credentials/JniCredentialsProvider, aws/sdk/kotlin/crt/auth/credentials/CredentialsProvider {
 	public static final field Companion Laws/sdk/kotlin/crt/auth/credentials/StaticCredentialsProvider$Companion;
-	public synthetic fun getJniCredentials$aws_crt_kotlin ()Lsoftware/amazon/awssdk/crt/auth/credentials/CredentialsProvider;
+	public synthetic fun getJniCredentials$aws_sdk_kotlin_crt_aws_crt_kotlin ()Lsoftware/amazon/awssdk/crt/auth/credentials/CredentialsProvider;
 }
 
 public final class aws/sdk/kotlin/crt/auth/credentials/StaticCredentialsProvider$Companion {

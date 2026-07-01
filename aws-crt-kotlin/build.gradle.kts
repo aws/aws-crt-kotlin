@@ -33,6 +33,11 @@ val optinAnnotations = listOf("kotlin.RequiresOptIn", "kotlinx.cinterop.Experime
 // KMP configuration from build plugin
 configureKmpTargets()
 
+if (NATIVE_ENABLED && HostManager.hostIsMingw) {
+    // Fail fast if MinGW cannot be found
+    findMingwHome()
+}
+
 kotlin {
     explicitApi()
 
@@ -119,6 +124,7 @@ kotlin {
 
                 val mingwLibs = Paths.get(mingwHome, "lib").toString().replace("\\", "\\\\") // Windows path shenanigans
 
+                // WINAPI_FAMILY values defined here: https://github.com/mingw-w64/mingw-w64/blob/7c72b740e1f2c735c6e3e5f436d3056b16c616ec/mingw-w64-headers/include/winapifamily.h
                 doLast {
                     Files.writeString(
                         defPath.get().asFile.toPath(),
@@ -129,7 +135,7 @@ kotlin {
                                 -DUNICODE \
                                 -DWINVER=0x0601 \
                                 -D_WIN32_WINNT=0x0601 \
-                                -DWINAPI_FAMILY=3 \
+                                -DWINAPI_FAMILY=WINAPI_FAMILY_DESKTOP_APP \
                                 -DOEMRESOURCE \
                                 -Wno-incompatible-pointer-types \
                                 -Wno-deprecated-declarations
@@ -229,5 +235,6 @@ private fun findMingwHome(): String = System.getenv("MINGW_PREFIX")?.takeUnless 
     ?: typedProp("mingw.prefix")
     ?: throw IllegalStateException(
         "Cannot determine MinGW prefix location. Please verify MinGW is installed correctly " +
-            "and that either the `MINGW_PREFIX` environment variable or the `mingw.prefix` Gradle property is set.",
+            "and that either the `MINGW_PREFIX` environment variable or the `mingw.prefix` Gradle property is set. " +
+            "See the project README.md for more information about building on Windows.",
     )

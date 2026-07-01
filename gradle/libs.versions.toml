@@ -1,15 +1,15 @@
 [versions]
-kotlin-version = "2.3.21"
+kotlin-version = "2.4.0"
 
-aws-kotlin-repo-tools-version = "0.5.13"
+aws-kotlin-repo-tools-version = "0.6.2"
 
 # libs
-crt-java-version = "0.46.1"
+crt-java-version = "0.47.1"
 coroutines-version = "1.11.0"
 binary-compatibility-validator-version = "0.18.1"
 
 # testing
-okhttp-version = "5.3.2"
+okhttp-version = "5.4.0"
 
 [libraries]
 aws-kotlin-repo-tools-build-support = { module="aws.sdk.kotlin.gradle:build-support", version.ref = "aws-kotlin-repo-tools-version" }
