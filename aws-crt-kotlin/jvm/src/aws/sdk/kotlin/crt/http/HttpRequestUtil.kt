@@ -5,8 +5,8 @@
 
 package aws.sdk.kotlin.crt.http
 
+import aws.sdk.kotlin.crt.io.Buffer
 import aws.sdk.kotlin.crt.io.MutableBuffer
-import aws.sdk.kotlin.crt.io.byteArrayBuffer
 import java.nio.ByteBuffer
 import software.amazon.awssdk.crt.http.HttpHeader as HttpHeaderJni
 import software.amazon.awssdk.crt.http.HttpRequest as HttpRequestJni
@@ -19,12 +19,11 @@ import software.amazon.awssdk.crt.http.HttpStreamResponseHandler as HttpStreamRe
  * Convert the KMP version of [HttpRequest] into the JNI equivalent
  */
 internal fun HttpRequest.into(): HttpRequestJni {
-    val jniHeaders = headers.entries()
-        .map { entry ->
-            entry.value.map { HttpHeaderJni(entry.key, it) }
+    val jniHeaders = buildList {
+        headers.entries().forEach { (key, values) ->
+            values.forEach { add(HttpHeaderJni(key, it)) }
         }
-        .flatten()
-        .toTypedArray()
+    }.toTypedArray()
 
     val bodyStream = body?.let { JniRequestBodyStream(it) }
     return HttpRequestJni(method, encodedPath, jniHeaders, bodyStream)
@@ -33,6 +32,18 @@ internal fun HttpRequest.into(): HttpRequestJni {
 internal fun HttpStreamResponseHandler.asJniStreamResponseHandler(): HttpStreamResponseHandlerJni {
     val handler = this
     return object : HttpStreamResponseHandlerJni {
+        private var cachedJni: HttpStreamJni? = null
+        private var ktStream: HttpStreamJVM? = null
+        private val bodyBuffer = ReusableByteArrayBuffer()
+
+        private fun stream(jni: HttpStreamJni): HttpStreamJVM {
+            if (cachedJni === jni) return ktStream!!
+            return HttpStreamJVM(jni).also {
+                ktStream = it
+                cachedJni = jni
+            }
+        }
+
         override fun onResponseHeaders(
             stream: HttpStreamJni,
             statusCode: Int,
@@ -40,32 +51,43 @@ internal fun HttpStreamResponseHandler.asJniStreamResponseHandler(): HttpStreamR
             headers: Array<out HttpHeaderJni>?,
         ) {
             val ktHeaders = headers?.map { HttpHeader(it.name, it.value) }
-            val ktStream = HttpStreamJVM(stream)
-            handler.onResponseHeaders(ktStream, statusCode, blockType, ktHeaders)
+            handler.onResponseHeaders(stream(stream), statusCode, blockType, ktHeaders)
         }
 
         override fun onResponseHeadersDone(stream: HttpStreamJni, blockType: Int) {
-            val ktStream = HttpStreamJVM(stream)
-            handler.onResponseHeadersDone(ktStream, blockType)
+            handler.onResponseHeadersDone(stream(stream), blockType)
         }
 
         override fun onResponseBody(stream: HttpStreamJni, bodyBytesIn: ByteArray?): Int {
             if (bodyBytesIn == null) return 0
-            val ktStream = HttpStreamJVM(stream)
-            val buffer = byteArrayBuffer(bodyBytesIn)
-            return handler.onResponseBody(ktStream, buffer)
+            bodyBuffer.bytes = bodyBytesIn
+            return handler.onResponseBody(stream(stream), bodyBuffer)
         }
 
         override fun onResponseComplete(stream: HttpStreamJni, errorCode: Int) {
-            val ktStream = HttpStreamJVM(stream)
-            handler.onResponseComplete(ktStream, errorCode)
+            handler.onResponseComplete(stream(stream), errorCode)
+            cachedJni = null
+            ktStream = null
         }
 
         override fun onMetrics(stream: HttpStreamJni, metrics: HttpStreamMetricsJni) {
-            val ktStream = HttpStreamJVM(stream)
-            handler.onMetrics(ktStream, metrics.toKotlin())
+            handler.onMetrics(stream(stream), metrics.toKotlin())
         }
     }
+}
+
+/**
+ * A reusable [Buffer] implementation that avoids allocating a new wrapper object per body chunk.
+ * The backing [bytes] array is swapped on each callback invocation.
+ */
+internal class ReusableByteArrayBuffer : Buffer {
+    var bytes: ByteArray = byteArrayOf()
+    override val len: Int get() = bytes.size
+    override fun copyTo(dest: ByteArray, offset: Int): Int {
+        bytes.copyInto(dest, offset)
+        return bytes.size
+    }
+    override fun readAll(): ByteArray = bytes
 }
 
 /**

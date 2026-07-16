@@ -5,6 +5,7 @@
 
 package aws.sdk.kotlin.crt.http
 
+import aws.sdk.kotlin.crt.io.Buffer
 import software.amazon.awssdk.crt.http.Http2ConnectionSetting as Http2ConnectionSettingJni
 import software.amazon.awssdk.crt.http.Http2Request as Http2RequestJni
 import software.amazon.awssdk.crt.http.Http2StreamManagerOptions as Http2StreamManagerOptionsJni
@@ -60,6 +61,18 @@ internal fun Http2StreamManagerOptions.toJni(): Http2StreamManagerOptionsJni {
 internal fun HttpStreamResponseHandler.asJniStreamBaseResponseHandler(): HttpStreamBaseResponseHandlerJni {
     val handler = this
     return object : HttpStreamBaseResponseHandlerJni {
+        private var cachedJni: HttpStreamBaseJni? = null
+        private var ktStream: HttpStreamJVM? = null
+        private val bodyBuffer = ReusableByteArrayBuffer()
+
+        private fun stream(jni: HttpStreamBaseJni): HttpStreamJVM {
+            if (cachedJni === jni) return ktStream!!
+            return HttpStreamJVM(jni).also {
+                ktStream = it
+                cachedJni = jni
+            }
+        }
+
         override fun onResponseHeaders(
             stream: HttpStreamBaseJni,
             statusCode: Int,
@@ -67,32 +80,27 @@ internal fun HttpStreamResponseHandler.asJniStreamBaseResponseHandler(): HttpStr
             headers: Array<out HttpHeaderJni>?,
         ) {
             val ktHeaders = headers?.map { HttpHeader(it.name, it.value) }
-            val ktStream = HttpStreamJVM(stream)
-            handler.onResponseHeaders(ktStream, statusCode, blockType, ktHeaders)
+            handler.onResponseHeaders(stream(stream), statusCode, blockType, ktHeaders)
         }
 
         override fun onResponseHeadersDone(stream: HttpStreamBaseJni, blockType: Int) {
-            val ktStream = HttpStreamJVM(stream)
-            handler.onResponseHeadersDone(ktStream, blockType)
+            handler.onResponseHeadersDone(stream(stream), blockType)
         }
 
         override fun onResponseBody(stream: HttpStreamBaseJni, bodyBytesIn: ByteArray?): Int {
-            if (bodyBytesIn == null) {
-                return 0
-            }
-            val ktStream = HttpStreamJVM(stream)
-            val buffer = aws.sdk.kotlin.crt.io.byteArrayBuffer(bodyBytesIn)
-            return handler.onResponseBody(ktStream, buffer)
+            if (bodyBytesIn == null) return 0
+            bodyBuffer.bytes = bodyBytesIn
+            return handler.onResponseBody(stream(stream), bodyBuffer)
         }
 
         override fun onResponseComplete(stream: HttpStreamBaseJni, errorCode: Int) {
-            val ktStream = HttpStreamJVM(stream)
-            handler.onResponseComplete(ktStream, errorCode)
+            handler.onResponseComplete(stream(stream), errorCode)
+            cachedJni = null
+            ktStream = null
         }
 
         override fun onMetrics(stream: HttpStreamBaseJni, metrics: HttpStreamMetricsJni) {
-            val ktStream = HttpStreamJVM(stream)
-            handler.onMetrics(ktStream, metrics.toKotlin())
+            handler.onMetrics(stream(stream), metrics.toKotlin())
         }
     }
 }
