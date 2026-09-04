@@ -5,6 +5,15 @@ on:
   merge_group:
     types: [checks_requested]
   workflow_dispatch:
+  workflow_call:
+    inputs:
+      ref:
+        type: string
+        required: false
+        default: ''
+    secrets:
+      CI_AWS_ROLE_ARN:
+        required: true
 
 env:
   PACKAGE_NAME: aws-crt-kotlin
@@ -21,6 +30,7 @@ permissions:
 jobs:
   jvm:
     runs-on: ubuntu-latest
+    if: ${{ github.event_name != 'workflow_call' }}
     strategy:
       fail-fast: false
       matrix:
@@ -34,6 +44,8 @@ jobs:
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
 
       - name: Configure JDK
         uses: actions/setup-java@v3
@@ -59,6 +71,7 @@ jobs:
   # macOS ARM images build and test for targets: jvm, macosArm64, iosSimulatorArm64, watchosSimulatorArm65, tvosSimulatorArm64
   # macos x64 images build and test for targets: jvm, macosX64, iosX64, tvosX64, watchosX64
   macos:
+    if: ${{ github.event_name != 'workflow_call' }}
     strategy:
       fail-fast: false
       matrix:
@@ -72,6 +85,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: true
+          ref: ${{ inputs.ref }}
       - name: Setup build environment
         uses: ./.github/actions/setup-build
       - name: Build and Test ${{ env.PACKAGE_NAME }}
@@ -96,6 +110,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: true
+          ref: ${{ inputs.ref }}
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -171,10 +186,12 @@ jobs:
   # windows JVM & native
   windows:
     runs-on: windows-2022
+    if: ${{ github.event_name != 'workflow_call' }}
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: true
+          ref: ${{ inputs.ref }}
       - name: Set up MSYS2
         uses: msys2/setup-msys2@v2
         with:

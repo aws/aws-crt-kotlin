@@ -8,6 +8,15 @@ on:
       - '*-main'
   merge_group:
     types: [checks_requested]
+  workflow_call:
+    inputs:
+      ref:
+        type: string
+        required: false
+        default: ''
+    secrets:
+      CI_AWS_ROLE_ARN:
+        required: true
 
 # Allow one instance of this workflow per pull request, and cancel older runs when new changes are pushed
 concurrency:
@@ -30,6 +39,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           path: 'aws-crt-kotlin'
+          ref: ${{ inputs.ref }}
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
