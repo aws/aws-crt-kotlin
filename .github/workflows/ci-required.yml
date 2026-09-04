@@ -1,0 +1,13 @@
+name: CI Required (same-repo aggregate)
+
+on:
+  pull_request:
+  merge_group:
+    types: [checks_requested]
+
+jobs:
+  required:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Aggregate placeholder
+        run: echo "Same-repo aggregate required context satisfied."
