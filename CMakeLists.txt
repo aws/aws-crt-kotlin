@@ -54,17 +54,27 @@ if (BUILD_DEPS)
 
     # CRT Libraries
     add_subdirectory(crt/aws-c-common)
-    if (UNIX AND NOT APPLE)
+
+    # s2n-tls is the unified TLS backend on every non-Windows platform, including Apple. aws-c-io
+    # (since it added macOS s2n support) compiles source/s2n/*.c whenever USE_S2N is on, which it now
+    # is by default on Apple, and those sources #include <s2n.h>. s2n therefore must be built and its
+    # include dirs made available BEFORE aws-c-io is added on Apple as well as on Linux/BSD -- otherwise
+    # the macOS build fails with "fatal error: 's2n.h' file not found". s2n links libcrypto, which we
+    # source from AWS-LC (SEARCH_LIBCRYPTO OFF), so AWS-LC is built alongside it.
+    if (UNIX)
         if (NOT USE_OPENSSL)
-            if (NOT (CMAKE_SYSTEM_PROCESSOR STREQUAL aarch64) AND
-                NOT (CMAKE_SYSTEM_PROCESSOR STREQUAL armv7l))
-                set(DISABLE_PERL ON)
+            # Linux-only libcrypto build tuning (Perl/AVX512 pre-built asm selection); not applicable
+            # on Apple, whose toolchain builds AWS-LC's asm directly.
+            if (UNIX AND NOT APPLE)
+                if (NOT (CMAKE_SYSTEM_PROCESSOR STREQUAL aarch64) AND
+                    NOT (CMAKE_SYSTEM_PROCESSOR STREQUAL armv7l))
+                    set(DISABLE_PERL ON)
+                endif()
+                if(CMAKE_C_COMPILER_ID MATCHES "GNU" AND CMAKE_C_COMPILER_VERSION VERSION_LESS "5.0")
+                    set(DISABLE_PERL OFF CACHE BOOL "Build with Perl to avoid using pre-compiled binary with AVX512")
+                    set(MY_ASSEMBLER_IS_TOO_OLD_FOR_512AVX ON CACHE BOOL "Disable AVX512 on old GCC that not supports it")
+                endif()
             endif()
-            if(CMAKE_C_COMPILER_ID MATCHES "GNU" AND CMAKE_C_COMPILER_VERSION VERSION_LESS "5.0")
-                set(DISABLE_PERL OFF CACHE BOOL "Build with Perl to avoid using pre-compiled binary with AVX512")
-                set(MY_ASSEMBLER_IS_TOO_OLD_FOR_512AVX ON CACHE BOOL "Disable AVX512 on old GCC that not supports it")
-            endif()
-            set(DISABLE_GO ON)
             set(SEARCH_LIBCRYPTO OFF)
             set(BUILD_LIBSSL OFF)
             list(APPEND ADDITIONAL_DEPS crypto)
