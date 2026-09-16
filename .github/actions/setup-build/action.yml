@@ -12,6 +12,15 @@ runs:
         java-version: 17
         cache: 'gradle'
 
+    # AWS-LC (built as a CRT dependency) requires Go at CMake configure/build time to generate crypto
+    # sources and its symbol version script. The Linux build gets Go from the dockcross image; the
+    # macOS and Windows builds compile the CRT directly on the runner, so Go must be on the runner PATH.
+    # Installing it here (a no-op relative to the container build on Linux) satisfies that requirement.
+    - name: Configure Go (required by AWS-LC)
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.22'
+
     # Cache the Kotlin/Native toolchain based on the input Kotlin version from version catalog
     # see https://kotlinlang.org/docs/native-improving-compilation-time.html
     - name: Cache Kotlin Native toolchain
