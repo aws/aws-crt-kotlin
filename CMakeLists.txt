@@ -77,6 +77,13 @@ if (BUILD_DEPS)
             endif()
             set(SEARCH_LIBCRYPTO OFF)
             set(BUILD_LIBSSL OFF)
+            # We only consume AWS-LC's libcrypto (and libssl for s2n) as a static dependency, never its
+            # bssl/openssl command-line tools. On Apple those tools are app executables that Xcode refuses
+            # to build without a PRODUCT_BUNDLE_IDENTIFIER (fatal on iOS), so disable them. Use CACHE so the
+            # value survives AWS-LC's own `option(BUILD_TOOL ... ON)`, which under the default CMP0077 policy
+            # would otherwise clear a plain (non-cache) variable set here. Matches AWS-LC's own iOS CI
+            # (tests/ci/run_ios_sim_tests.sh passes -DBUILD_TOOL=0).
+            set(BUILD_TOOL OFF CACHE BOOL "Do not build AWS-LC's bssl/openssl CLI tools." FORCE)
             list(APPEND ADDITIONAL_DEPS crypto)
             add_subdirectory(crt/aws-lc)
         else()
