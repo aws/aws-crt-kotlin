@@ -54,36 +54,22 @@ if (BUILD_DEPS)
 
     # CRT Libraries
     add_subdirectory(crt/aws-c-common)
-
-    # s2n-tls is the unified TLS backend on every non-Windows platform, including Apple. aws-c-io
-    # (since it added macOS s2n support) compiles source/s2n/*.c whenever USE_S2N is on, which it now
-    # is by default on Apple, and those sources #include <s2n.h>. s2n therefore must be built and its
-    # include dirs made available BEFORE aws-c-io is added on Apple as well as on Linux/BSD -- otherwise
-    # the macOS build fails with "fatal error: 's2n.h' file not found". s2n links libcrypto, which we
-    # source from AWS-LC (SEARCH_LIBCRYPTO OFF), so AWS-LC is built alongside it.
-    if (UNIX)
+    # s2n-tls + AWS-LC are built only on non-Apple Unix. On Apple the native TLS backend
+    # (Security framework via AWS_USE_SECITEM, wired in build-support/CMakeTasks.kt) is used instead,
+    # so aws-c-io compiles source/darwin/*.c and needs neither s2n nor AWS-LC there.
+    if (UNIX AND NOT APPLE)
         if (NOT USE_OPENSSL)
-            # Linux-only libcrypto build tuning (Perl/AVX512 pre-built asm selection); not applicable
-            # on Apple, whose toolchain builds AWS-LC's asm directly.
-            if (UNIX AND NOT APPLE)
-                if (NOT (CMAKE_SYSTEM_PROCESSOR STREQUAL aarch64) AND
-                    NOT (CMAKE_SYSTEM_PROCESSOR STREQUAL armv7l))
-                    set(DISABLE_PERL ON)
-                endif()
-                if(CMAKE_C_COMPILER_ID MATCHES "GNU" AND CMAKE_C_COMPILER_VERSION VERSION_LESS "5.0")
-                    set(DISABLE_PERL OFF CACHE BOOL "Build with Perl to avoid using pre-compiled binary with AVX512")
-                    set(MY_ASSEMBLER_IS_TOO_OLD_FOR_512AVX ON CACHE BOOL "Disable AVX512 on old GCC that not supports it")
-                endif()
+            if (NOT (CMAKE_SYSTEM_PROCESSOR STREQUAL aarch64) AND
+                NOT (CMAKE_SYSTEM_PROCESSOR STREQUAL armv7l))
+                set(DISABLE_PERL ON)
             endif()
+            if(CMAKE_C_COMPILER_ID MATCHES "GNU" AND CMAKE_C_COMPILER_VERSION VERSION_LESS "5.0")
+                set(DISABLE_PERL OFF CACHE BOOL "Build with Perl to avoid using pre-compiled binary with AVX512")
+                set(MY_ASSEMBLER_IS_TOO_OLD_FOR_512AVX ON CACHE BOOL "Disable AVX512 on old GCC that not supports it")
+            endif()
+            set(DISABLE_GO ON)
             set(SEARCH_LIBCRYPTO OFF)
             set(BUILD_LIBSSL OFF)
-            # We only consume AWS-LC's libcrypto (and libssl for s2n) as a static dependency, never its
-            # bssl/openssl command-line tools. On Apple those tools are app executables that Xcode refuses
-            # to build without a PRODUCT_BUNDLE_IDENTIFIER (fatal on iOS), so disable them. Use CACHE so the
-            # value survives AWS-LC's own `option(BUILD_TOOL ... ON)`, which under the default CMP0077 policy
-            # would otherwise clear a plain (non-cache) variable set here. Matches AWS-LC's own iOS CI
-            # (tests/ci/run_ios_sim_tests.sh passes -DBUILD_TOOL=0).
-            set(BUILD_TOOL OFF CACHE BOOL "Do not build AWS-LC's bssl/openssl CLI tools." FORCE)
             list(APPEND ADDITIONAL_DEPS crypto)
             add_subdirectory(crt/aws-lc)
         else()

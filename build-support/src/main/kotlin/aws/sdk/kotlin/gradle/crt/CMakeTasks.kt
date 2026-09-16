@@ -115,6 +115,13 @@ private fun Project.registerCmakeConfigureTask(
             if (HostManager.hostIsMac && knTarget.konanTarget.family.isAppleFamily) {
                 args.add("-GXcode")
 
+                // Use the Apple-native TLS backend (Security framework / SecItem) instead of s2n-tls on
+                // Apple targets. aws-c-io defaults USE_S2N=ON on Apple, which would require building s2n +
+                // AWS-LC here; AWS_USE_SECITEM=ON selects the native path (and forces USE_S2N=OFF in
+                // aws-c-io), so no s2n/AWS-LC dependency is compiled for Apple. Pending upstream AWS-LC
+                // fixes for its Xcode `-Werror` build, this avoids building AWS-LC on Apple entirely.
+                args.add("-DAWS_USE_SECITEM=ON")
+
                 // FIXME - What should the min target for ios be? Does it matter for our build? DCMAKE_OSX_DEPLOYMENT_TARGET
                 knTarget.konanTarget.osxArchitectureName?.let {
                     args.add("-DCMAKE_OSX_ARCHITECTURES=$it")
@@ -180,27 +187,13 @@ private fun Project.registerCmakeBuildTask(
                 System.getProperty("org.gradle.workers.max", coresPlusOne),
             )
 
-            // Emit the full compiler command lines and diagnostics. Without this the native toolchain
-            // (Make/Ninja on Linux, xcodebuild on Apple) prints only terse per-file progress, so a compile
-            // `error:` never reaches stdout and is lost when only a tail of the log is surfaced on failure.
-            // `--verbose` is honored by CMake's build tool for the Makefiles/Ninja generators; for the Xcode
-            // generator we pass `-verbose` through to xcodebuild after the `--` separator.
-            val isXcode = HostManager.hostIsMac && knTarget.konanTarget.family.isAppleFamily
-            if (!isXcode) {
-                args.add("--verbose")
-            }
-
             val osxSdk = knTarget.konanTarget.osxDeviceSdkName
-            if (isXcode) {
+            if (osxSdk != null) {
                 // see https://cmake.org/cmake/help/latest/manual/cmake-toolchains.7.html#switching-between-device-and-simulator
-                // assumes Xcode generator. Everything after `--` is passed to the native tool (xcodebuild).
+                // assumes Xcode generator
                 args.add("--")
-                if (osxSdk != null) {
-                    args.add("-sdk")
-                    args.add(osxSdk)
-                }
-                // Make xcodebuild echo each clang invocation and its diagnostics to stdout.
-                args.add("-verbose")
+                args.add("-sdk")
+                args.add(osxSdk)
             }
 
             runCmake(knTarget, args, name)
@@ -318,18 +311,6 @@ private fun Project.runCmake(
             buildString {
                 appendLine("CRT external command failed (exit code ${result.exitValue}): $commandLine")
                 appendLine("Full output log: ${logFile.absolutePath}")
-
-                // The CI environment cannot retrieve the per-task log file, so the failure MUST be derivable
-                // from the Gradle console alone. Verbose builds bury the real `error:`/`fatal error:` lines in
-                // thousands of lines of compile invocations, well outside any fixed tail window -- so pull the
-                // diagnostic lines out explicitly and echo them first, then still include a tail for context.
-                val errorLines = logFile.grepLines(COMPILER_ERROR_REGEX, ERROR_LINE_LIMIT)
-                if (errorLines.isNotEmpty()) {
-                    appendLine("--- ${errorLines.size} matching diagnostic line(s) from ${logFile.name} ---")
-                    errorLines.forEach { appendLine(it) }
-                    appendLine()
-                }
-
                 appendLine("--- last $LOG_TAIL_LINES lines of ${logFile.name} ---")
                 append(logFile.tailLines(LOG_TAIL_LINES))
             },
@@ -344,35 +325,7 @@ private fun Project.runCmake(
 /**
  * Number of trailing lines of a failed command's log file to echo to the Gradle console.
  */
-private const val LOG_TAIL_LINES = 100
-
-/**
- * Maximum number of matched compiler-diagnostic lines to echo to the Gradle console on failure.
- */
-private const val ERROR_LINE_LIMIT = 200
-
-/**
- * Matches C/C++ compiler and linker diagnostic lines (clang/gcc/ld) plus CMake's own fatal errors, so the real
- * cause is surfaced to the console even when the per-task log file is unavailable (e.g. in CI).
- */
-private val COMPILER_ERROR_REGEX =
-    Regex("""(error:|fatal error:|undefined (reference|symbol)|ld: |CMake Error|The following build commands failed)""")
-
-/**
- * Returns up to [limit] lines of this file matching [regex], keeping at most [limit] lines in memory at a time.
- */
-private fun File.grepLines(regex: Regex, limit: Int): List<String> {
-    val matched = ArrayList<String>()
-    useLines { lines ->
-        for (line in lines) {
-            if (regex.containsMatchIn(line)) {
-                matched.add(line)
-                if (matched.size >= limit) break
-            }
-        }
-    }
-    return matched
-}
+private const val LOG_TAIL_LINES = 50
 
 /**
  * Returns the last [n] lines of this file, keeping at most [n] lines in memory at a time.
