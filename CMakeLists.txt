@@ -54,6 +54,9 @@ if (BUILD_DEPS)
 
     # CRT Libraries
     add_subdirectory(crt/aws-c-common)
+    # s2n-tls + AWS-LC are built only on non-Apple Unix. On Apple the native TLS backend
+    # (Security framework via AWS_USE_SECITEM, wired in build-support/CMakeTasks.kt) is used instead,
+    # so aws-c-io compiles source/darwin/*.c and needs neither s2n nor AWS-LC there.
     if (UNIX AND NOT APPLE)
         if (NOT USE_OPENSSL)
             if (NOT (CMAKE_SYSTEM_PROCESSOR STREQUAL aarch64) AND
