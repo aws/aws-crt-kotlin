@@ -115,6 +115,15 @@ private fun Project.registerCmakeConfigureTask(
             if (HostManager.hostIsMac && knTarget.konanTarget.family.isAppleFamily) {
                 args.add("-GXcode")
 
+                // Use the Apple-native TLS backend on Apple targets without pulling in s2n-tls. aws-c-io
+                // defaults USE_S2N=ON on Apple (which would require building s2n + AWS-LC here); setting
+                // USE_S2N=OFF selects the native SecureTransport backend (source/darwin/*.c) instead, so no
+                // s2n/AWS-LC dependency is compiled for Apple. We deliberately do NOT set AWS_USE_SECITEM:
+                // the SecItem backend breaks HTTPS proxying, and it would also force USE_S2N=OFF anyway.
+                // Pending upstream AWS-LC fixes for its Xcode `-Werror` build, this avoids building AWS-LC on
+                // Apple entirely.
+                args.add("-DUSE_S2N=OFF")
+
                 // FIXME - What should the min target for ios be? Does it matter for our build? DCMAKE_OSX_DEPLOYMENT_TARGET
                 knTarget.konanTarget.osxArchitectureName?.let {
                     args.add("-DCMAKE_OSX_ARCHITECTURES=$it")
