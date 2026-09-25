@@ -43,8 +43,7 @@ jobs:
     needs: gate
     if: ${{ needs.gate.outputs.approved == 'true' }}
     uses: ./.github/workflows/ci.yaml
-    secrets:
-      CI_AWS_ROLE_ARN: ${{ secrets.CI_AWS_ROLE_ARN }}
+    secrets: inherit
     with:
       ref: ${{ github.event.pull_request.head.sha }}
 
@@ -52,8 +51,7 @@ jobs:
     needs: gate
     if: ${{ needs.gate.outputs.approved == 'true' }}
     uses: ./.github/workflows/changelog-verification.yml
-    secrets:
-      CI_AWS_ROLE_ARN: ${{ secrets.CI_AWS_ROLE_ARN }}
+    secrets: inherit
     with:
       ref: ${{ github.event.pull_request.head.sha }}
 
@@ -61,8 +59,7 @@ jobs:
     needs: gate
     if: ${{ needs.gate.outputs.approved == 'true' }}
     uses: ./.github/workflows/kat-transform.yml
-    secrets:
-      CI_AWS_ROLE_ARN: ${{ secrets.CI_AWS_ROLE_ARN }}
+    secrets: inherit
     with:
       ref: ${{ github.event.pull_request.head.sha }}
 
