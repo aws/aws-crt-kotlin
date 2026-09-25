@@ -40,7 +40,6 @@ jobs:
         with:
           path: 'aws-crt-kotlin'
           ref: ${{ inputs.ref }}
-          allow-unsafe-pr-checkout: ${{ inputs.ref != '' }}
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
