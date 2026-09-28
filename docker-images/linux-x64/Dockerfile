@@ -5,6 +5,15 @@
 FROM dockcross/manylinux2014-x64:20240104-6eda627
 ENV DEFAULT_DOCKCROSS_IMAGE aws-crt-kotlin/linux-x64:latest
 
+# aws-lc >= v1.30 requires Go at CMake configure/build time to generate crypto
+# sources and the symbol version script. The dockcross base image does not ship
+# Go, so install it for the container's own (build-host) architecture.
+ENV GO_VERSION=1.22.5
+RUN curl -LJo go.tar.gz "https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz" && \
+    tar -C /usr/local -xzf go.tar.gz && \
+    rm go.tar.gz
+ENV PATH ${PATH}:/usr/local/go/bin
+
 RUN curl -LJo konan-toolchain.tar.gz https://download.jetbrains.com/kotlin/native/x86_64-unknown-linux-gnu-gcc-8.3.0-glibc-2.19-kernel-4.9-2.tar.gz
 
 # Reset the toolchain and environment based on the K/N toolchain
