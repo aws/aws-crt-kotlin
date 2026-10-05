@@ -1,0 +1,8 @@
+{
+  "id": "98723e3b-05f7-463e-9355-1e09e570b120",
+  "type": "bugfix",
+  "description": "Wrap JNI HttpClientConnection.makeRequest failures in the Kotlin CrtRuntimeException so callers can retry connection-closed errors",
+  "issues": [
+    "#309"
+  ]
+}
