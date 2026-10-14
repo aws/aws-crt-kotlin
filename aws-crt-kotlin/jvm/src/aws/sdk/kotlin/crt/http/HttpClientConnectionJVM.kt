@@ -5,6 +5,7 @@
 
 package aws.sdk.kotlin.crt.http
 
+import aws.sdk.kotlin.crt.crtJniCall
 import software.amazon.awssdk.crt.http.Http2ClientConnection as Http2ClientConnectionJni
 import software.amazon.awssdk.crt.http.HttpClientConnection as HttpClientConnectionJni
 
@@ -15,13 +16,13 @@ internal class HttpClientConnectionJVM(internal val jniConn: HttpClientConnectio
     override val id: String = jniConn.nativeHandle.toString()
     override val version: HttpVersion = HttpVersion.fromInt(jniConn.version.value)
 
-    override fun makeRequest(httpReq: HttpRequest, handler: HttpStreamResponseHandler): HttpStream {
+    override fun makeRequest(httpReq: HttpRequest, handler: HttpStreamResponseHandler): HttpStream = crtJniCall {
         val jniStream = if (jniConn is Http2ClientConnectionJni) {
             jniConn.makeRequest(httpReq.toHttp2Jni(), handler.asJniStreamBaseResponseHandler())
         } else {
             jniConn.makeRequest(httpReq.into(), handler.asJniStreamResponseHandler())
         }
-        return HttpStreamJVM(jniStream)
+        HttpStreamJVM(jniStream)
     }
 
     override fun close() = jniConn.close()
