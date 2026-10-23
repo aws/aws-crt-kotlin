@@ -158,6 +158,16 @@ jobs:
         with:
           name: native-test-binaries
           path: native-test-binaries
+      # Authenticated pulls from Public ECR get higher rate limits than anonymous ones. Without this, the
+      # concurrent matrix jobs below get throttled pulling the distro base images.
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.CI_AWS_ROLE_ARN }}
+          aws-region: us-west-2
+      - name: Authenticate to Public ECR
+        run: |
+          aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
       - name: Test ${{ matrix.os }} on ${{ matrix.arch }}
