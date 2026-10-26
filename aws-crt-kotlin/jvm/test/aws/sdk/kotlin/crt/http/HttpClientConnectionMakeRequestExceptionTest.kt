@@ -76,12 +76,10 @@ class HttpClientConnectionMakeRequestExceptionTest : CrtTest() {
         override fun makeRequest(
             request: HttpRequestJni,
             streamHandler: HttpStreamResponseHandlerJni,
-        ): HttpStreamJni {
-            throw CrtRuntimeExceptionJni(
-                AWS_ERROR_HTTP_CONNECTION_CLOSED,
-                "HttpClientConnection.MakeRequest: Unable to Execute Request",
-            )
-        }
+        ): HttpStreamJni = throw CrtRuntimeExceptionJni(
+            AWS_ERROR_HTTP_CONNECTION_CLOSED,
+            "HttpClientConnection.MakeRequest: Unable to Execute Request",
+        )
 
         override fun releaseNativeHandle() {
             // No native handle was allocated for this stub.
