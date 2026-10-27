@@ -25,39 +25,42 @@ public actual class HostResolver private constructor(
     public actual constructor(elg: EventLoopGroup) : this(elg, false, DEFAULT_MAX_ENTRIES)
     public actual constructor() : this(EventLoopGroup(), true, DEFAULT_MAX_ENTRIES)
 
-    override val ptr: CPointer<aws_host_resolver>
+    private val lifecycle = try {
+        NativeLifecycle("aws_host_resolver_new_default", ::aws_host_resolver_release) { cb, userData ->
+            memScoped {
+                val shutdownOpts = cValue<aws_shutdown_callback_options> {
+                    shutdown_callback_fn = cb
+                    shutdown_callback_user_data = userData
+                }
 
-    private val shutdownCompleteChannel = shutdownChannel()
-    private val channelStableRef = StableRef.create(shutdownCompleteChannel)
+                val resolverOpts = cValue<aws_host_resolver_default_options> {
+                    el_group = elg.ptr
+                    shutdown_options = shutdownOpts.ptr
+                    max_entries = maxEntries.convert()
+                }
 
-    init {
-        ptr = memScoped {
-            val shutdownOpts = cValue<aws_shutdown_callback_options> {
-                shutdown_callback_fn = staticCFunction(::onShutdownComplete)
-                shutdown_callback_user_data = channelStableRef.asCPointer()
-            }
-
-            val resolverOpts = cValue<aws_host_resolver_default_options> {
-                el_group = elg.ptr
-                shutdown_options = shutdownOpts.ptr
-                max_entries = maxEntries.convert()
-            }
-
-            checkNotNull(aws_host_resolver_new_default(Allocator.Default, resolverOpts)) {
-                "aws_host_resolver_new_default()"
+                aws_host_resolver_new_default(Allocator.Default, resolverOpts)
             }
         }
+    } catch (e: Throwable) {
+        if (manageElg) elg.close()
+        throw e
     }
 
+    override val ptr: CPointer<aws_host_resolver> get() = lifecycle.ptr
+
+    /**
+     * Suspend until this resolver has shut down. An [EventLoopGroup] this resolver created itself may still be shutting
+     * down when this returns.
+     */
     actual override suspend fun waitForShutdown() {
-        shutdownCompleteChannel.receive()
+        lifecycle.awaitShutdown()
     }
 
     actual override fun close() {
-        aws_host_resolver_release(ptr)
-        channelStableRef.dispose()
-
-        if (manageElg) elg.close()
+        if (lifecycle.close()) {
+            if (manageElg) elg.close()
+        }
     }
 
     public suspend fun resolve(hostname: String): List<CrtHostAddress> = memScoped {
@@ -74,14 +77,6 @@ public actual class HostResolver private constructor(
             aws_string_destroy(awsHostname)
             channelStableRef.dispose()
         }
-    }
-}
-
-@OptIn(ExperimentalForeignApi::class)
-private fun onShutdownComplete(userData: COpaquePointer?) {
-    userData?.withDereferenced<ShutdownChannel>(dispose = true) { ch ->
-        ch.trySend(Unit)
-        ch.close()
     }
 }
 

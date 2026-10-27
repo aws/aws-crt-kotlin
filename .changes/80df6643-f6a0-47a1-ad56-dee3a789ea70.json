@@ -1,0 +1,8 @@
+{
+    "id": "80df6643-f6a0-47a1-ad56-dee3a789ea70",
+    "type": "bugfix",
+    "description": "Fix a native use-after-free crash when closing `EventLoopGroup`, `HostResolver` and `ClientBootstrap`, caused by disposing the shutdown callback's user data before CRT finished shutting down. Also fix leaked shutdown callback user data when these classes or `HttpClientConnectionManager` fail to create.",
+    "issues": [
+        "aws/aws-crt-kotlin#319"
+    ]
+}
