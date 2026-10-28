@@ -28,8 +28,8 @@ private const val ITERATIONS = 100
  * Regression tests for https://github.com/aws/aws-crt-kotlin/issues/319. The shutdown callback may run on a CRT thread
  * after `close()` returns, so the StableRef it dereferences must stay alive until the callback disposes it.
  *
- * Each test counts the refs created during it with [ShutdownRefTracker]: a leaked ref leaves the count above 0, and a
- * ref disposed twice takes it below.
+ * Each test counts the refs created during it with [ShutdownRefTracker]. A leaked ref leaves the count above 0.
+ * Double disposal is guarded by `ShutdownSignal.disposeOnce` and covered by `NativeLifecycleTest`.
  */
 class ShutdownStableRefTest {
     // runBlocking rather than runTest: shutdown is signaled from a CRT thread, and virtual time would fire the timeouts
