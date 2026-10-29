@@ -6,9 +6,7 @@
 package aws.sdk.kotlin.crt.io
 
 import aws.sdk.kotlin.crt.*
-import aws.sdk.kotlin.crt.util.ShutdownChannel
-import aws.sdk.kotlin.crt.util.shutdownChannel
-import aws.sdk.kotlin.crt.util.withDereferenced
+import aws.sdk.kotlin.crt.util.NativeLifecycle
 import cnames.structs.aws_event_loop_group
 import kotlinx.cinterop.*
 import libcrt.aws_event_loop_group_new
@@ -31,42 +29,28 @@ public actual class EventLoopGroup actual constructor(maxThreads: Int) :
     Closeable,
     AsyncShutdown {
 
-    override val ptr: CPointer<aws_event_loop_group>
-
-    private val shutdownCompleteChannel = shutdownChannel()
-    private val channelStableRef = StableRef.create(shutdownCompleteChannel)
-
-    init {
-        ptr = memScoped {
+    private val lifecycle = NativeLifecycle("aws_event_loop_group_new", ::aws_event_loop_group_release) { cb, userData ->
+        memScoped {
             val shutdownOpts = cValue<aws_shutdown_callback_options> {
-                shutdown_callback_fn = staticCFunction(::onShutdownComplete)
-                shutdown_callback_user_data = channelStableRef.asCPointer()
+                shutdown_callback_fn = cb
+                shutdown_callback_user_data = userData
             }
 
             val eventLoopGroupOpts = cValue<aws_event_loop_group_options> {
                 shutdown_options = shutdownOpts.ptr
             }
 
-            checkNotNull(aws_event_loop_group_new(Allocator.Default, eventLoopGroupOpts)) {
-                "aws_event_loop_group_new()"
-            }
+            aws_event_loop_group_new(Allocator.Default, eventLoopGroupOpts)
         }
     }
 
+    override val ptr: CPointer<aws_event_loop_group> get() = lifecycle.ptr
+
     actual override suspend fun waitForShutdown() {
-        shutdownCompleteChannel.receive()
+        lifecycle.awaitShutdown()
     }
 
     actual override fun close() {
-        aws_event_loop_group_release(ptr)
-        channelStableRef.dispose()
-    }
-}
-
-@OptIn(ExperimentalForeignApi::class)
-private fun onShutdownComplete(userData: COpaquePointer?) {
-    userData?.withDereferenced<ShutdownChannel>(dispose = true) { ch ->
-        ch?.trySend(Unit)
-        ch?.close()
+        lifecycle.close()
     }
 }

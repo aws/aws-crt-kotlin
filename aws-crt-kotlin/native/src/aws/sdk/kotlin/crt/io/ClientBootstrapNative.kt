@@ -6,9 +6,7 @@
 package aws.sdk.kotlin.crt.io
 
 import aws.sdk.kotlin.crt.*
-import aws.sdk.kotlin.crt.util.ShutdownChannel
-import aws.sdk.kotlin.crt.util.shutdownChannel
-import aws.sdk.kotlin.crt.util.withDereferenced
+import aws.sdk.kotlin.crt.util.NativeLifecycle
 import kotlinx.cinterop.*
 import libcrt.aws_client_bootstrap
 import libcrt.aws_client_bootstrap_new
@@ -27,43 +25,48 @@ public actual class ClientBootstrap private constructor(
     AsyncShutdown {
 
     public actual constructor() : this(EventLoopGroup(), true)
-    private constructor(elg: EventLoopGroup, manageElg: Boolean) : this(elg, manageElg, HostResolver(elg), true)
+    private constructor(elg: EventLoopGroup, manageElg: Boolean) : this(elg, manageElg, ownedHostResolver(elg, manageElg), true)
     public actual constructor(elg: EventLoopGroup, hr: HostResolver) : this(elg, false, hr, false)
 
-    private val shutdownCompleteChannel = shutdownChannel()
-    private val channelStableRef = StableRef.create(shutdownCompleteChannel)
-    override val ptr: CPointer<aws_client_bootstrap>
+    private val lifecycle = try {
+        NativeLifecycle("aws_client_bootstrap_new", ::aws_client_bootstrap_release) { cb, userData ->
+            val opts = cValue<aws_client_bootstrap_options> {
+                event_loop_group = elg.ptr
+                host_resolver = hr.ptr
+                on_shutdown_complete = cb
+                user_data = userData
+            }
 
-    init {
-        val opts = cValue<aws_client_bootstrap_options> {
-            event_loop_group = elg.ptr
-            host_resolver = hr.ptr
-            on_shutdown_complete = staticCFunction(::onShutdownComplete)
-            user_data = channelStableRef.asCPointer()
+            aws_client_bootstrap_new(Allocator.Default, opts)
         }
-
-        ptr = checkNotNull(aws_client_bootstrap_new(Allocator.Default, opts)) {
-            "aws_client_bootstrap_new()"
-        }
+    } catch (e: Throwable) {
+        if (manageHr) hr.close()
+        if (manageElg) elg.close()
+        throw e
     }
 
+    override val ptr: CPointer<aws_client_bootstrap> get() = lifecycle.ptr
+
+    /**
+     * Suspend until this bootstrap has shut down. A [HostResolver] or [EventLoopGroup] this bootstrap created itself may
+     * still be shutting down when this returns.
+     */
     actual override suspend fun waitForShutdown() {
-        shutdownCompleteChannel.receive()
+        lifecycle.awaitShutdown()
     }
 
     actual override fun close() {
-        aws_client_bootstrap_release(ptr)
-        channelStableRef.dispose()
-
-        if (manageHr) hr.close()
-        if (manageElg) elg.close()
+        if (lifecycle.close()) {
+            if (manageHr) hr.close()
+            if (manageElg) elg.close()
+        }
     }
 }
 
-@OptIn(ExperimentalForeignApi::class)
-private fun onShutdownComplete(userData: COpaquePointer?) {
-    userData?.withDereferenced<ShutdownChannel> { ch ->
-        ch.trySend(Unit)
-        ch.close()
-    }
+// Runs before the primary constructor, so it must close an owned elg itself if the resolver fails to create
+private fun ownedHostResolver(elg: EventLoopGroup, manageElg: Boolean): HostResolver = try {
+    HostResolver(elg)
+} catch (e: Throwable) {
+    if (manageElg) elg.close()
+    throw e
 }

@@ -12,7 +12,6 @@ import aws.sdk.kotlin.crt.io.SocketType
 import aws.sdk.kotlin.crt.io.requiresTls
 import aws.sdk.kotlin.crt.util.*
 import cnames.structs.aws_http_connection_manager
-import kotlinx.atomicfu.atomic
 import kotlinx.cinterop.*
 import libcrt.*
 import kotlin.coroutines.Continuation
@@ -26,8 +25,6 @@ public actual class HttpClientConnectionManager actual constructor(
     Closeable,
     AsyncShutdown {
 
-    private val closed = atomic(false)
-
     public actual val managerMetrics: HttpManagerMetrics
         get() = memScoped {
             val metrics = alloc<aws_http_manager_metrics>()
@@ -39,12 +36,11 @@ public actual class HttpClientConnectionManager actual constructor(
             )
         }
 
-    private val manager: CPointer<aws_http_connection_manager>
-
-    private val shutdownComplete = shutdownChannel()
-    private val shutdownCompleteStableRef = StableRef.create(shutdownComplete)
-    init {
-        manager = memScoped {
+    private val lifecycle = NativeLifecycle(
+        "aws_http_connection_manager_new",
+        ::aws_http_connection_manager_release,
+    ) { cb, userData ->
+        memScoped {
             val endpointBytes = options.uri.host.encodeToByteArray().pin()
             val endpoint = endpointBytes.asAwsByteCursor()
             defer { endpointBytes.unpin() }
@@ -116,8 +112,8 @@ public actual class HttpClientConnectionManager actual constructor(
                 enable_read_back_pressure = options.manualWindowManagement
                 max_connection_idle_in_milliseconds = options.maxConnectionIdleMs.convert()
 
-                shutdown_complete_callback = staticCFunction(::onShutdownComplete)
-                shutdown_complete_user_data = shutdownCompleteStableRef.asCPointer()
+                shutdown_complete_callback = cb
+                shutdown_complete_user_data = userData
 
                 tls_connection_options = tlsConnOpts?.ptr
                 monitoring_options = monitoringOpts?.ptr
@@ -126,8 +122,10 @@ public actual class HttpClientConnectionManager actual constructor(
             }
 
             aws_http_connection_manager_new(Allocator.Default, managerOpts)
-        } ?: throw CrtRuntimeException("aws_http_connection_manager_new()")
+        }
     }
+
+    private val manager: CPointer<aws_http_connection_manager> get() = lifecycle.ptr
 
     /**
      * Request an HttpClientConnection from the pool
@@ -150,13 +148,11 @@ public actual class HttpClientConnectionManager actual constructor(
     }
 
     actual override suspend fun waitForShutdown() {
-        shutdownComplete.receiveCatching().getOrNull()
+        lifecycle.awaitShutdown()
     }
 
     actual override fun close() {
-        if (closed.compareAndSet(false, true)) {
-            aws_http_connection_manager_release(manager)
-        }
+        lifecycle.close()
     }
 }
 
@@ -178,13 +174,6 @@ private fun SocketDomain.toNativeSocketDomain() = when (this) {
     SocketDomain.IPv4 -> aws_socket_domain.AWS_SOCKET_IPV4
     SocketDomain.IPv6 -> aws_socket_domain.AWS_SOCKET_IPV6
     SocketDomain.LOCAL -> aws_socket_domain.AWS_SOCKET_LOCAL
-}
-
-private fun onShutdownComplete(userdata: COpaquePointer?) {
-    userdata?.withDereferenced<ShutdownChannel>(dispose = true) { notify ->
-        notify.trySend(Unit)
-        notify.close()
-    }
 }
 
 private data class HttpConnectionAcquisitionRequest(
