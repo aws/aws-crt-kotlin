@@ -6,6 +6,7 @@
 package aws.sdk.kotlin.crt.io
 
 import aws.sdk.kotlin.crt.Allocator
+import aws.sdk.kotlin.crt.CRT
 import aws.sdk.kotlin.crt.awsAssertOpSuccess
 import aws.sdk.kotlin.crt.util.asAwsByteCursor
 import aws.sdk.kotlin.crt.util.toKString
@@ -16,6 +17,9 @@ import libcrt.aws_uri_init_parse
 
 @OptIn(ExperimentalForeignApi::class)
 internal actual fun parseUri(uri: String): Uri = memScoped {
+    // Reachable from public Uri.parse() with no WithCrt instance; Allocator.Default needs CRT initialized
+    CRT.initRuntime { }
+
     uri.encodeToByteArray().usePinned { pinned ->
         val uriCursor = pinned.asAwsByteCursor()
         val awsUri = alloc<aws_uri>()
