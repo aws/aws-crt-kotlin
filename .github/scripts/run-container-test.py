@@ -151,16 +151,16 @@ def run_docker_test(opts):
     test_bin_dir = os.path.abspath(opts.test_bin_dir)
     path_to_exe = f'./linux{opts.arch.capitalize()}/debugTest/test.kexe'
 
-    cmd = [
+    base_cmd = [
         oci_exe,
         'run',
         '--rm',
         f'-v{test_bin_dir}:/test',
     ]
     if not opts.no_system_certs:
-        cmd.append(f'-v/etc/ssl:/etc/ssl')
+        base_cmd.append(f'-v/etc/ssl:/etc/ssl')
 
-    cmd.extend(
+    base_cmd.extend(
         [
             '-w/test',
             '-e DEBIAN_FRONTEND=noninteractive',
@@ -171,9 +171,50 @@ def run_docker_test(opts):
         ]
     )
 
-    cmd = shlex.join(cmd)
-    print(cmd)
-    shell(cmd)
+    def run_test_exe(*args, check=False, capture_output=False):
+        cmd = shlex.join([*base_cmd, *args])
+        print(cmd)
+        return shell(cmd, check=check, capture_output=capture_output)
+
+    listing = run_test_exe('--ktest_list_tests', check=True, capture_output=True).stdout.decode()
+    isolated_tests = list_class_tests(listing, ISOLATED_TEST_CLASS)
+
+    failures = []
+
+    # CRT initialization is process-wide, so isolated tests are excluded here and each run in its own process below
+    if run_test_exe(f'--ktest_filter=*-{ISOLATED_TEST_CLASS}.*').returncode != 0:
+        failures.append('main test suite')
+
+    for test in isolated_tests:
+        if run_test_exe(f'--ktest_filter={test}').returncode != 0:
+            failures.append(test)
+
+    if failures:
+        print(f"Failed test runs: {', '.join(failures)}")
+        exit(1)
+
+
+# Mirrors the per-test isolation configured in aws-crt-kotlin/build.gradle.kts
+ISOLATED_TEST_CLASS = 'aws.sdk.kotlin.crt.io.UninitializedCrtTest'
+
+
+def list_class_tests(listing, class_name):
+    """
+    Parse `--ktest_list_tests` output and return the fully-qualified names of the tests in [class_name]
+
+    The listing has a `<class>.` header line followed by one indented line per test method.
+    """
+    tests = []
+    current_class = None
+    for line in listing.splitlines():
+        if not line.strip():
+            continue
+        if line.startswith(' '):
+            if current_class == class_name:
+                tests.append(f'{class_name}.{line.strip()}')
+        else:
+            current_class = line.strip().removesuffix('.')
+    return tests
 
 
 def create_cli():
