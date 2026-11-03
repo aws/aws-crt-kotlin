@@ -114,7 +114,15 @@ public actual class TlsContext actual constructor(options: TlsContextOptions?) :
 }
 
 @OptIn(ExperimentalForeignApi::class)
-internal actual fun isCipherSupported(cipher: TlsCipherPreference): Boolean = aws_tls_is_cipher_pref_supported(cipher.value.convert())
+internal actual fun isCipherSupported(cipher: TlsCipherPreference): Boolean {
+    // Called before any WithCrt instance may exist; the TLS vtable is null until aws_io_library_init
+    CRT.initRuntime { }
+    return aws_tls_is_cipher_pref_supported(cipher.value.convert())
+}
 
 @OptIn(ExperimentalForeignApi::class)
-internal actual fun isAlpnSupported(): Boolean = aws_tls_is_alpn_available()
+internal actual fun isAlpnSupported(): Boolean {
+    // Called before any WithCrt instance may exist; the TLS vtable is null until aws_io_library_init
+    CRT.initRuntime { }
+    return aws_tls_is_alpn_available()
+}

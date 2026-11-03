@@ -5,6 +5,7 @@
 package aws.sdk.kotlin.crt.util
 
 import aws.sdk.kotlin.crt.Allocator
+import aws.sdk.kotlin.crt.CRT
 import aws.sdk.kotlin.crt.CrtRuntimeException
 import kotlinx.cinterop.*
 import libcrt.*
@@ -43,7 +44,11 @@ public fun CPointer<aws_string>.free() {
  * Decode the kotlin [String] as an aws_string instance
  * Caller is responsible for freeing
  */
-public fun String.toAwsString(): CPointer<aws_string> = aws_string_new_from_c_str(Allocator.Default, this) ?: throw CrtRuntimeException("aws_string_new_from_c_string($this)")
+public fun String.toAwsString(): CPointer<aws_string> {
+    // Public entry point with no WithCrt instance; Allocator.Default needs CRT initialized
+    CRT.initRuntime { }
+    return aws_string_new_from_c_str(Allocator.Default, this) ?: throw CrtRuntimeException("aws_string_new_from_c_string($this)")
+}
 
 // NOTE - we can't use aws_byte_cursor_from_c_str() (which takes a Kotlin string). The way Kotlin
 // manages memory through this bridge is incompatible. I'm fairly certain it's because they encode the String to

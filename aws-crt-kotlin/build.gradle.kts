@@ -10,7 +10,10 @@ import aws.sdk.kotlin.gradle.kmp.configureIosSimulatorTasks
 import aws.sdk.kotlin.gradle.kmp.configureKmpTargets
 import aws.sdk.kotlin.gradle.publishing.configurePublishing
 import aws.sdk.kotlin.gradle.util.typedProp
+import org.jetbrains.kotlin.gradle.plugin.KotlinTargetWithTests
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
+import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTargetWithTests
+import org.jetbrains.kotlin.gradle.plugin.mpp.NativeBuildType
 import org.jetbrains.kotlin.konan.target.Family
 import org.jetbrains.kotlin.konan.target.HostManager
 import java.nio.file.Files
@@ -163,6 +166,25 @@ kotlin {
                 "-v",
             )
             compilerOptions.freeCompilerArgs.addAll(compilerArgs)
+        }
+    }
+}
+
+// Tests in this class require a process where the CRT has not been initialized yet, so each runs in its own process
+val uninitializedCrtTestClass = "aws.sdk.kotlin.crt.io.UninitializedCrtTest"
+val uninitializedCrtTests = listOf("testIsCipherSupported", "testIsAlpnSupported")
+
+kotlin.targets.withType<KotlinNativeTargetWithTests<*>>().configureEach {
+    val testBinary = binaries.getTest(NativeBuildType.DEBUG)
+
+    testRuns.named(KotlinTargetWithTests.DEFAULT_TEST_RUN_NAME).configure {
+        filter { excludeTestsMatching(uninitializedCrtTestClass) }
+    }
+
+    uninitializedCrtTests.forEach { testName ->
+        testRuns.create(testName.removePrefix("test").replaceFirstChar { it.lowercase() } + "Uninitialized") {
+            setExecutionSourceFrom(testBinary)
+            filter { includeTestsMatching("$uninitializedCrtTestClass.$testName") }
         }
     }
 }

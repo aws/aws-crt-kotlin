@@ -1,0 +1,5 @@
+{
+    "id": "c468c14f-fa1f-4d8b-bfb5-77136a74e94b",
+    "type": "bugfix",
+    "description": "Correctly wrap CRT calls `isCipherSupported` and `isAlpnSupported`"
+}

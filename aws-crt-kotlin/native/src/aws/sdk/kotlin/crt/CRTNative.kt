@@ -23,6 +23,9 @@ public actual object CRT {
     private var initialized = false
     private val initializerMu = Mutex() // protects `initialized`
 
+    internal val isInitialized: Boolean
+        get() = runBlocking { initializerMu.withLock { initialized } }
+
     /**
      * Initialize the CRT libraries if needed
      * @param block used to configure CRT [Config]
