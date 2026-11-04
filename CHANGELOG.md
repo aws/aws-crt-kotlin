@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.13.1] - 11/04/2026
+
+### Features
+* Upgrade CRT libs to 1.0.0 versions
+
+### Fixes
+* #309 Wrap JNI HttpClientConnection.makeRequest failures in the Kotlin CrtRuntimeException so callers can retry connection-closed errors
+* [#319](https://github.com/aws/aws-crt-kotlin/issues/319) Fix a native use-after-free crash when closing `EventLoopGroup`, `HostResolver` and `ClientBootstrap`, caused by disposing the shutdown callback's user data before CRT finished shutting down. Also fix leaked shutdown callback user data when these classes or `HttpClientConnectionManager` fail to create.
+* Correctly wrap CRT calls `isCipherSupported` and `isAlpnSupported`
+
+### Miscellaneous
+* Upgrade to latest CRT library versions
+
 ## [0.13.0] - 06/30/2026
 
 ### Features
