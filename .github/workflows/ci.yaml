@@ -72,11 +72,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os:
-          - macos-26-large  # x64
-          - macos-26-xlarge # ARM
-          - macos-15-large  # x64
-          - macos-15-xlarge # ARM
+        include:
+          - os: macos-26-large  # x64
+            ios-device: iPhone 17
+          - os: macos-26-xlarge # ARM
+            ios-device: iPhone 17
+          - os: macos-15-large  # x64
+            ios-device: iPhone 16
+          - os: macos-15-xlarge # ARM
+            ios-device: iPhone 16
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -85,12 +89,7 @@ jobs:
       - name: Setup build environment
         uses: ./.github/actions/setup-build
       - name: Build and Test ${{ env.PACKAGE_NAME }}
-        run: |
-          if [ "${{ matrix.os }}" = "macos-13" ]; then
-            ./gradlew build -PiosSimulatorDevice="iPhone 15"
-          else
-            ./gradlew build
-          fi
+        run: ./gradlew build -PiosSimulatorDevice="${{ matrix.ios-device }}"
       - name: Save Test Reports
         if: failure()
         uses: actions/upload-artifact@v4
