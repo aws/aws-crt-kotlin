@@ -75,8 +75,6 @@ jobs:
         os:
           - macos-15-large  # x64
           - macos-15-xlarge # ARM
-          - macos-14-large  # x64
-          - macos-14-xlarge # ARM
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
