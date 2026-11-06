@@ -35,6 +35,13 @@ jobs:
       - name: Checkout sources
         uses: actions/checkout@v4
 
+      - name: Install test JDK
+        id: test-jdk
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'corretto'
+          java-version: ${{ matrix.java-version }}
+
       - name: Configure JDK
         uses: actions/setup-java@v3
         with:
@@ -48,7 +55,10 @@ jobs:
         shell: bash
         run: |
           ./gradlew jvmApiCheck
-          ./gradlew -Ptest.java.version=${{ matrix.java-version }} jvmTest --stacktrace
+          # Gradle doesn't search setup-java's tool cache for toolchains, so point it at the test JDK
+          ./gradlew \
+            -Porg.gradle.java.installations.paths=${{ steps.test-jdk.outputs.path }} \
+            -Ptest.java.version=${{ matrix.java-version }} jvmTest --stacktrace
       - name: Save Test Reports
         if: failure()
         uses: actions/upload-artifact@v4
@@ -59,14 +69,19 @@ jobs:
   # macOS ARM images build and test for targets: jvm, macosArm64, iosSimulatorArm64, watchosSimulatorArm65, tvosSimulatorArm64
   # macos x64 images build and test for targets: jvm, macosX64, iosX64, tvosX64, watchosX64
   macos:
+    name: macos (${{ matrix.os }})
     strategy:
       fail-fast: false
       matrix:
-        os:
-          - macos-15-large  # x64
-          - macos-15-xlarge # ARM
-          - macos-14-large  # x64
-          - macos-14-xlarge # ARM
+        include:
+          - os: macos-26-large  # x64
+            ios-device: iPhone 17
+          - os: macos-26-xlarge # ARM
+            ios-device: iPhone 17
+          - os: macos-15-large  # x64
+            ios-device: iPhone 16
+          - os: macos-15-xlarge # ARM
+            ios-device: iPhone 16
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -75,12 +90,7 @@ jobs:
       - name: Setup build environment
         uses: ./.github/actions/setup-build
       - name: Build and Test ${{ env.PACKAGE_NAME }}
-        run: |
-          if [ "${{ matrix.os }}" = "macos-13" ]; then
-            ./gradlew build -PiosSimulatorDevice="iPhone 15"
-          else
-            ./gradlew build
-          fi
+        run: ./gradlew build -PiosSimulatorDevice="${{ matrix.ios-device }}"
       - name: Save Test Reports
         if: failure()
         uses: actions/upload-artifact@v4
